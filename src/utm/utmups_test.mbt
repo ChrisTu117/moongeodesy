@@ -59,10 +59,8 @@ test "standard zones: regular, Norway, Svalbard, polar" {
 
 ///|
 test "errors and formatting" {
-  let r = try? @utm.from_latlon(91.0, 0.0)
-  assert_true(r is Err(_))
-  let r2 = try? @utm.to_latlon(61, true, 500000.0, 0.0)
-  assert_true(r2 is Err(_))
+  assert_true(raises(() => ignore(@utm.from_latlon(91.0, 0.0))))
+  assert_true(raises(() => ignore(@utm.to_latlon(61, true, 500000.0, 0.0))))
   let u = @utm.from_latlon(0.0, 3.0)
   assert_eq(u.to_string(), "31N 500000 0")
 }

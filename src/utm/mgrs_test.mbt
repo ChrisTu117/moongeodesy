@@ -1,4 +1,13 @@
 ///|
+fn raises(f : () -> Unit raise @utm.UtmError) -> Bool {
+  try f() catch {
+    _ => true
+  } noraise {
+    _ => false
+  }
+}
+
+///|
 test "MGRS encoding matches GeoTrans" {
   let mut mismatches = 0
   for c in mgrs_cases {
@@ -45,9 +54,9 @@ test "MGRS examples and errors" {
     (d.lat - 39.9087).abs() < 1.0e-5 && (d.lon - 116.3975).abs() < 1.0e-5,
   )
   assert_eq(@utm.from_mgrs("50smk4850217797").easting, d.easting)
-  assert_true((try? @utm.from_mgrs("50SMK485021779")) is Err(_)) // odd digits
-  assert_true((try? @utm.from_mgrs("61SMK")) is Err(_)) // bad zone
-  assert_true((try? @utm.from_mgrs("50IMK")) is Err(_)) // I is not a band
-  assert_true((try? @utm.to_mgrs(0.0, 0.0, precision=12)) is Err(_))
+  assert_true(raises(() => ignore(@utm.from_mgrs("50SMK485021779")))) // odd digits
+  assert_true(raises(() => ignore(@utm.from_mgrs("61SMK")))) // bad zone
+  assert_true(raises(() => ignore(@utm.from_mgrs("50IMK")))) // I is not a band
+  assert_true(raises(() => ignore(@utm.to_mgrs(0.0, 0.0, precision=12))))
   assert_eq(@utm.to_mgrs(0.0, 0.0, precision=0), "31NAA")
 }

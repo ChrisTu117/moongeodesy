@@ -62,7 +62,7 @@ fn pow10(n : Int) -> Int64 {
 ///|
 fn pad_digits(v : Int64, width : Int) -> String {
   let s = v.to_string()
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   for _ in 0..<(width - s.length()) {
     buf.write_char('0')
   }
@@ -88,7 +88,7 @@ pub fn UtmCoord::to_mgrs(
   let tile_u = 100000L * 1000000L
   let xh = (xi / tile_u).to_int()
   let yh = (yi / tile_u).to_int()
-  let buf = StringBuilder::new()
+  let buf = StringBuilder()
   if self.zone == 0 {
     let z = (if self.north { 2 } else { 0 }) +
       (if self.easting >= 2000000.0 { 1 } else { 0 })

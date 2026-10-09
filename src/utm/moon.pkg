@@ -1,7 +1,6 @@
 import {
   "moonbitlang/core/math",
   "moonbitlang/core/debug",
-  "moonbitlang/core/double",
   "moonbitlang/core/cmp",
   "ChrisTu117/moongeodesy/internal/geomath",
 }
