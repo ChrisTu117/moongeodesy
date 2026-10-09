@@ -1,0 +1,89 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ChrisTu117/moongeodesy/utm"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn central_meridian(Int) -> Double
+
+pub fn from_latlon(Double, Double, zone? : Int) -> UtmCoord raise UtmError
+
+pub fn standard_zone(Double, Double) -> Int
+
+pub fn to_latlon(Int, Bool, Double, Double) -> Geographic raise UtmError
+
+// Errors
+pub suberror UtmError {
+  InvalidLatitude(Double)
+  InvalidZone(Int)
+  OutOfRange(String)
+  InvalidMgrs(String)
+} derive(@debug.Debug)
+pub fn UtmError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub(all) struct Geographic {
+  lat : Double
+  lon : Double
+  gamma : Double
+  k : Double
+} derive(@debug.Debug)
+pub fn Geographic::to_repr(Self) -> @debug.Repr
+
+pub struct PolarStereographic {
+  a : Double
+  f : Double
+  k0 : Double
+  e2 : Double
+  es : Double
+  e2m : Double
+  c : Double
+}
+pub fn PolarStereographic::forward(Self, Bool, Double, Double) -> Projected
+pub fn PolarStereographic::new(Double, Double, Double) -> Self
+pub fn PolarStereographic::reverse(Self, Bool, Double, Double) -> Geographic
+pub fn PolarStereographic::ups() -> Self
+
+pub(all) struct Projected {
+  x : Double
+  y : Double
+  gamma : Double
+  k : Double
+} derive(@debug.Debug)
+pub fn Projected::to_repr(Self) -> @debug.Repr
+
+pub struct TransverseMercator {
+  a : Double
+  f : Double
+  k0 : Double
+  e2 : Double
+  es : Double
+  e2m : Double
+  c : Double
+  n : Double
+  a1 : Double
+  b1 : Double
+  alp : FixedArray[Double]
+  bet : FixedArray[Double]
+}
+pub fn TransverseMercator::forward(Self, Double, Double, Double) -> Projected
+pub fn TransverseMercator::new(Double, Double, Double) -> Self
+pub fn TransverseMercator::reverse(Self, Double, Double, Double) -> Geographic
+pub fn TransverseMercator::utm() -> Self
+
+pub(all) struct UtmCoord {
+  zone : Int
+  north : Bool
+  easting : Double
+  northing : Double
+  gamma : Double
+  k : Double
+} derive(@debug.Debug)
+pub fn UtmCoord::to_repr(Self) -> @debug.Repr
+pub fn UtmCoord::to_string(Self) -> String
+
+// Type aliases
+
+// Traits
