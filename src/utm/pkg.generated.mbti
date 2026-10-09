@@ -10,9 +10,13 @@ pub fn central_meridian(Int) -> Double
 
 pub fn from_latlon(Double, Double, zone? : Int) -> UtmCoord raise UtmError
 
+pub fn from_mgrs(String, centered? : Bool) -> MgrsPoint raise UtmError
+
 pub fn standard_zone(Double, Double) -> Int
 
 pub fn to_latlon(Int, Bool, Double, Double) -> Geographic raise UtmError
+
+pub fn to_mgrs(Double, Double, precision? : Int) -> String raise UtmError
 
 // Errors
 pub suberror UtmError {
@@ -31,6 +35,17 @@ pub(all) struct Geographic {
   k : Double
 } derive(@debug.Debug)
 pub fn Geographic::to_repr(Self) -> @debug.Repr
+
+pub(all) struct MgrsPoint {
+  zone : Int
+  north : Bool
+  easting : Double
+  northing : Double
+  precision : Int
+  lat : Double
+  lon : Double
+} derive(@debug.Debug)
+pub fn MgrsPoint::to_repr(Self) -> @debug.Repr
 
 pub struct PolarStereographic {
   a : Double
@@ -81,6 +96,7 @@ pub(all) struct UtmCoord {
   gamma : Double
   k : Double
 } derive(@debug.Debug)
+pub fn UtmCoord::to_mgrs(Self, Double, precision? : Int) -> String raise UtmError
 pub fn UtmCoord::to_repr(Self) -> @debug.Repr
 pub fn UtmCoord::to_string(Self) -> String
 
