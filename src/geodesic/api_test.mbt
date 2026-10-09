@@ -64,3 +64,15 @@ test "custom ellipsoids" {
   }
   assert_true(bad)
 }
+
+///|
+test "predefined ellipsoids" {
+  let w = @geodesic.Geodesic::wgs84()
+  let c = @geodesic.Geodesic::cgcs2000()
+  assert_eq(c.equatorial_radius(), 6378137.0)
+  // WGS-84 and CGCS2000 differ by ~0.1 mm in the polar radius
+  let dw = w.distance(39.9087, 116.3975, 31.2304, 121.4737)
+  let dc = c.distance(39.9087, 116.3975, 31.2304, 121.4737)
+  assert_true((dw - dc).abs() < 1.0e-3)
+  assert_true(@geodesic.Geodesic::grs80().flattening() == c.flattening())
+}

@@ -18,7 +18,8 @@ test "readme" {
   // Polygon area (m², counter-clockwise positive) and perimeter (m)
   let a = g.polygon_area([(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)])
 
-  // Other ellipsoids: GRS80, a sphere, Mars...
+  // Other ellipsoids: CGCS2000 / GRS80 built in, or any (a, f)
+  let cgcs = @geodesic.Geodesic::cgcs2000()
   let sphere = @geodesic.Geodesic::new(6371000.0, 0.0)
 
   // Chinese map coordinate systems
@@ -30,5 +31,5 @@ test "readme" {
   let u = @utm.from_latlon(39.9087, 116.3975) // zone 50N, easting/northing, convergence, scale
   let m = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
   let p = @utm.from_mgrs("50S MK 48502 17797") // centre of the 1 m square
-  ignore((r, d, pts, a, sphere, wgs, u, m, p))
+  ignore((r, d, pts, a, cgcs, sphere, wgs, u, m, p))
 }

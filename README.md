@@ -49,7 +49,8 @@ let pts = line.densify(100000.0)
 // Polygon area (m², counter-clockwise positive) and perimeter (m)
 let a = g.polygon_area([(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)])
 
-// Other ellipsoids: GRS80, a sphere, Mars...
+// Other ellipsoids: CGCS2000 / GRS80 built in, or any (a, f)
+let cgcs = @geodesic.Geodesic::cgcs2000()
 let sphere = @geodesic.Geodesic::new(6371000.0, 0.0)
 
 // Chinese map coordinate systems
@@ -72,7 +73,7 @@ moon run src/examples/demo
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
-data sets (`moon test --target all`, 25 tests on 4 backends):
+data sets (`moon test --target all`, 28 tests on 4 backends):
 
 | Area | Reference | Result |
 | --- | --- | --- |

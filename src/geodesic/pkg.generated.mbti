@@ -50,12 +50,14 @@ pub struct Geodesic {
   c4x : FixedArray[Double]
 }
 pub fn Geodesic::arc_direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> DirectResult
+pub fn Geodesic::cgcs2000() -> Self
 pub fn Geodesic::direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> DirectResult
 pub fn Geodesic::direct_line(Self, Double, Double, Double, Double) -> GeodesicLine
 pub fn Geodesic::distance(Self, Double, Double, Double, Double) -> Double
 pub fn Geodesic::ellipsoid_area(Self) -> Double
 pub fn Geodesic::equatorial_radius(Self) -> Double
 pub fn Geodesic::flattening(Self) -> Double
+pub fn Geodesic::grs80() -> Self
 pub fn Geodesic::inverse(Self, Double, Double, Double, Double, long_unroll? : Bool) -> InverseResult
 pub fn Geodesic::inverse_line(Self, Double, Double, Double, Double) -> GeodesicLine
 pub fn Geodesic::line(Self, Double, Double, Double) -> GeodesicLine

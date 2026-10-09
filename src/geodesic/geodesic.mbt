@@ -155,6 +155,25 @@ pub fn Geodesic::wgs84() -> Geodesic {
 }
 
 ///|
+let grs80_geod : Geodesic = Geodesic::new(6378137.0, 1.0 / 298.257222101) catch {
+  _ => abort("unreachable")
+}
+
+///|
+/// The GRS80 ellipsoid (also used by CGCS2000, China Geodetic Coordinate
+/// System 2000, whose ellipsoid differs from GRS80 only in GM/omega).
+pub fn Geodesic::grs80() -> Geodesic {
+  grs80_geod
+}
+
+///|
+/// The CGCS2000 ellipsoid (a = 6378137 m, f = 1/298.257222101), the
+/// national geodetic datum of China.
+pub fn Geodesic::cgcs2000() -> Geodesic {
+  grs80_geod
+}
+
+///|
 pub fn Geodesic::equatorial_radius(self : Geodesic) -> Double {
   self.a
 }
