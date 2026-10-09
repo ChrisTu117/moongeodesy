@@ -17,6 +17,8 @@ pub suberror GeodesicError {
 pub fn GeodesicError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+type Accumulator
+
 pub(all) struct DirectResult {
   lat1 : Double
   lon1 : Double
@@ -58,6 +60,8 @@ pub fn Geodesic::inverse(Self, Double, Double, Double, Double, long_unroll? : Bo
 pub fn Geodesic::inverse_line(Self, Double, Double, Double, Double) -> GeodesicLine
 pub fn Geodesic::line(Self, Double, Double, Double) -> GeodesicLine
 pub fn Geodesic::new(Double, Double) -> Self raise GeodesicError
+pub fn Geodesic::polygon(Self, polyline? : Bool) -> PolygonArea
+pub fn Geodesic::polygon_area(Self, ArrayView[(Double, Double)]) -> PolygonResult
 pub fn Geodesic::wgs84() -> Self
 
 pub struct GeodesicLine {
@@ -120,6 +124,33 @@ pub(all) struct InverseResult {
   area12 : Double
 } derive(@debug.Debug)
 pub fn InverseResult::to_repr(Self) -> @debug.Repr
+
+pub struct PolygonArea {
+  geod : Geodesic
+  polyline : Bool
+  area0 : Double
+  areasum : Accumulator
+  perimetersum : Accumulator
+  mut num : Int
+  mut lat1 : Double
+  mut lon1 : Double
+  mut crossings : Int
+  mut lat0 : Double
+  mut lon0 : Double
+}
+pub fn PolygonArea::add_edge(Self, Double, Double) -> Unit
+pub fn PolygonArea::add_point(Self, Double, Double) -> Unit
+pub fn PolygonArea::clear(Self) -> Unit
+pub fn PolygonArea::compute(Self, reverse? : Bool, sign? : Bool) -> PolygonResult
+pub fn PolygonArea::test_edge(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
+pub fn PolygonArea::test_point(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
+
+pub(all) struct PolygonResult {
+  num : Int
+  perimeter : Double
+  area : Double
+} derive(@debug.Debug)
+pub fn PolygonResult::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
