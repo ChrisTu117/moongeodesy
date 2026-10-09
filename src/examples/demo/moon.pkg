@@ -1,0 +1,7 @@
+import {
+  "ChrisTu117/moongeodesy/cn",
+  "ChrisTu117/moongeodesy/geodesic",
+  "ChrisTu117/moongeodesy/utm",
+}
+
+pkgtype(kind: "executable")
