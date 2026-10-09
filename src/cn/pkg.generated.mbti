@@ -1,0 +1,44 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ChrisTu117/moongeodesy/cn"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn bd09_to_gcj02(LatLon) -> LatLon
+
+pub fn bd09_to_gcj02_approx(LatLon) -> LatLon
+
+pub fn bd09_to_wgs84(LatLon) -> LatLon
+
+pub fn gcj02_to_bd09(LatLon) -> LatLon
+
+pub fn gcj02_to_wgs84(LatLon) -> LatLon
+
+pub fn gcj02_to_wgs84_approx(LatLon) -> LatLon
+
+pub fn out_of_china(Double, Double) -> Bool
+
+pub fn wgs84_to_bd09(LatLon) -> LatLon
+
+pub fn wgs84_to_gcj02(LatLon) -> LatLon
+
+// Errors
+
+// Types and methods
+pub(all) struct LatLon {
+  lat : Double
+  lon : Double
+} derive(Eq, @debug.Debug)
+pub fn LatLon::equal(Self, Self) -> Bool
+pub fn LatLon::new(Double, Double) -> Self
+pub fn LatLon::not_equal(Self, Self) -> Bool
+pub fn LatLon::output(Self, &Logger) -> Unit
+pub fn LatLon::to_repr(Self) -> @debug.Repr
+pub fn LatLon::to_string(Self) -> String
+pub impl Show for LatLon
+
+// Type aliases
+
+// Traits
