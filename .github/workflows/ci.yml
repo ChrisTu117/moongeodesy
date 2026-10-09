@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install MoonBit toolchain
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Versions
+        run: moon version --all
+
+      - name: Update registry index
+        run: moon update
+
+      - name: Check (warnings are errors)
+        run: moon check --deny-warn
+
+      - name: Format check
+        run: moon fmt --check
+
+      - name: Interface files up to date
+        run: |
+          moon info
+          git diff --exit-code -- '*.mbti'
+
+      - name: Test (all backends)
+        run: moon test --target all
+
+      - name: Run demo
+        run: moon run src/examples/demo
+
+      - name: Package
+        run: moon package --list
