@@ -1,0 +1,63 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ChrisTu117/moongeodesy/internal/geomath"
+
+// Values
+pub fn ang_diff(Double, Double) -> (Double, Double)
+
+pub fn ang_normalize(Double) -> Double
+
+pub fn ang_round(Double) -> Double
+
+pub fn atan2d(Double, Double) -> Double
+
+pub fn copysign(Double, Double) -> Double
+
+pub let dbl_epsilon : Double
+
+pub let dbl_min : Double
+
+pub let deg_per_rad : Double
+
+pub fn degrees(Double) -> Double
+
+pub fn fmax(Double, Double) -> Double
+
+pub fn fmin(Double, Double) -> Double
+
+pub fn hypot(Double, Double) -> Double
+
+pub fn imin(Int, Int) -> Int
+
+pub fn is_finite(Double) -> Bool
+
+pub fn lat_fix(Double) -> Double
+
+pub fn norm2(Double, Double) -> (Double, Double)
+
+pub let pi : Double
+
+pub fn polyval(Int, FixedArray[Double], Int, Double) -> Double
+
+pub let rad_per_deg : Double
+
+pub fn radians(Double) -> Double
+
+pub fn remainder(Double, Double) -> Double
+
+pub fn round_even(Double) -> Double
+
+pub fn sincosd(Double) -> (Double, Double)
+
+pub fn sincosde(Double, Double) -> (Double, Double)
+
+pub fn sq(Double) -> Double
+
+pub fn sum2(Double, Double) -> (Double, Double)
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

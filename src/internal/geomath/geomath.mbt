@@ -2,39 +2,39 @@
 // https://geographiclib.sourceforge.io/
 
 ///|
-let pi : Double = 3.141592653589793
+pub let pi : Double = 3.141592653589793
 
 ///|
-let deg_per_rad : Double = 180.0 / pi
+pub let deg_per_rad : Double = 180.0 / pi
 
 ///|
-let rad_per_deg : Double = pi / 180.0
+pub let rad_per_deg : Double = pi / 180.0
 
 ///|
 /// Machine epsilon for Double (2^-52).
-let dbl_epsilon : Double = 2.220446049250313e-16
+pub let dbl_epsilon : Double = 2.220446049250313e-16
 
 ///|
 /// Smallest positive normal Double.
-let dbl_min : Double = 2.2250738585072014e-308
+pub let dbl_min : Double = 2.2250738585072014e-308
 
 ///|
-fn sq(x : Double) -> Double {
+pub fn sq(x : Double) -> Double {
   x * x
 }
 
 ///|
-fn degrees(x : Double) -> Double {
+pub fn degrees(x : Double) -> Double {
   x * deg_per_rad
 }
 
 ///|
-fn radians(x : Double) -> Double {
+pub fn radians(x : Double) -> Double {
   x * rad_per_deg
 }
 
 ///|
-fn is_finite(x : Double) -> Bool {
+pub fn is_finite(x : Double) -> Bool {
   !x.is_nan() && !x.is_inf()
 }
 
@@ -43,7 +43,7 @@ let sign_mask : Int64 = -9223372036854775808L
 
 ///|
 /// Magnitude of `x` with the sign bit of `y` (handles signed zeros).
-fn copysign(x : Double, y : Double) -> Double {
+pub fn copysign(x : Double, y : Double) -> Double {
   let bits = (x.reinterpret_as_int64() & sign_mask.lnot()) |
     (y.reinterpret_as_int64() & sign_mask)
   bits.reinterpret_as_double()
@@ -51,7 +51,7 @@ fn copysign(x : Double, y : Double) -> Double {
 
 ///|
 /// Round to nearest integer, ties to even (like C `rint` / Python `round`).
-fn round_even(x : Double) -> Double {
+pub fn round_even(x : Double) -> Double {
   let f = x.floor()
   let d = x - f
   if d > 0.5 {
@@ -67,7 +67,7 @@ fn round_even(x : Double) -> Double {
 
 ///|
 /// IEEE 754 remainder of x/y, result in [-y/2, y/2] (y > 0).
-fn remainder(x : Double, y : Double) -> Double {
+pub fn remainder(x : Double, y : Double) -> Double {
   if !is_finite(x) {
     return @double.not_a_number
   }
@@ -89,7 +89,7 @@ fn remainder(x : Double, y : Double) -> Double {
 
 ///|
 /// Error-free transformation of a sum: u + v = s + t exactly.
-fn sum2(u : Double, v : Double) -> (Double, Double) {
+pub fn sum2(u : Double, v : Double) -> (Double, Double) {
   let s = u + v
   let mut up = s - v
   let mut vpp = s - up
@@ -101,7 +101,7 @@ fn sum2(u : Double, v : Double) -> (Double, Double) {
 
 ///|
 /// Evaluate polynomial of degree n with coefficients p[s..s+n] by Horner.
-fn polyval(n : Int, p : FixedArray[Double], s : Int, x : Double) -> Double {
+pub fn polyval(n : Int, p : FixedArray[Double], s : Int, x : Double) -> Double {
   if n < 0 {
     return 0.0
   }
@@ -116,7 +116,7 @@ fn polyval(n : Int, p : FixedArray[Double], s : Int, x : Double) -> Double {
 
 ///|
 /// Round an angle so that small values underflow to zero.
-fn ang_round(x : Double) -> Double {
+pub fn ang_round(x : Double) -> Double {
   let z = 1.0 / 16.0
   let mut y = x.abs()
   if y < z {
@@ -127,7 +127,7 @@ fn ang_round(x : Double) -> Double {
 
 ///|
 /// Reduce angle to [-180, 180].
-fn ang_normalize(x : Double) -> Double {
+pub fn ang_normalize(x : Double) -> Double {
   let y = remainder(x, 360.0)
   if y.abs() == 180.0 {
     copysign(180.0, x)
@@ -138,7 +138,7 @@ fn ang_normalize(x : Double) -> Double {
 
 ///|
 /// Replace latitudes outside [-90, 90] by NaN.
-fn lat_fix(x : Double) -> Double {
+pub fn lat_fix(x : Double) -> Double {
   if x.abs() > 90.0 {
     @double.not_a_number
   } else {
@@ -148,7 +148,7 @@ fn lat_fix(x : Double) -> Double {
 
 ///|
 /// Compute y - x reduced to [-180, 180] accurately; returns (d, error).
-fn ang_diff(x : Double, y : Double) -> (Double, Double) {
+pub fn ang_diff(x : Double, y : Double) -> (Double, Double) {
   let (d0, t0) = sum2(remainder(-x, 360.0), remainder(y, 360.0))
   let (d1, t) = sum2(remainder(d0, 360.0), t0)
   let mut d = d1
@@ -170,7 +170,7 @@ fn quadrant(s : Double, c : Double, q : Int) -> (Double, Double) {
 
 ///|
 /// Sine and cosine of x in degrees, exact for multiples of 90.
-fn sincosd(x : Double) -> (Double, Double) {
+pub fn sincosd(x : Double) -> (Double, Double) {
   let mut r = if is_finite(x) { x % 360.0 } else { @double.not_a_number }
   let q = if r.is_nan() { 0 } else { round_even(r / 90.0).to_int() }
   r = r - 90.0 * q.to_double()
@@ -183,7 +183,7 @@ fn sincosd(x : Double) -> (Double, Double) {
 
 ///|
 /// Sine and cosine of (x + t) in degrees with x in [-180, 180].
-fn sincosde(x : Double, t : Double) -> (Double, Double) {
+pub fn sincosde(x : Double, t : Double) -> (Double, Double) {
   let q = if is_finite(x) { round_even(x / 90.0).to_int() } else { 0 }
   let r = radians(ang_round(x - 90.0 * q.to_double() + t))
   let (s0, c0) = quadrant(@math.sin(r), @math.cos(r), q)
@@ -194,7 +194,7 @@ fn sincosde(x : Double, t : Double) -> (Double, Double) {
 
 ///|
 /// atan2(y, x) in degrees, exact for the quadrant boundaries.
-fn atan2d(y0 : Double, x0 : Double) -> Double {
+pub fn atan2d(y0 : Double, x0 : Double) -> Double {
   let mut x = x0
   let mut y = y0
   let mut q = 0
@@ -219,14 +219,14 @@ fn atan2d(y0 : Double, x0 : Double) -> Double {
 
 ///|
 /// Normalize a two-vector.
-fn norm2(x : Double, y : Double) -> (Double, Double) {
+pub fn norm2(x : Double, y : Double) -> (Double, Double) {
   let r = hypot(x, y)
   (x / r, y / r)
 }
 
 ///|
 /// max with Python/C++ std::max semantics (returns `a` unless `b > a`).
-fn fmax(a : Double, b : Double) -> Double {
+pub fn fmax(a : Double, b : Double) -> Double {
   if b > a {
     b
   } else {
@@ -236,7 +236,7 @@ fn fmax(a : Double, b : Double) -> Double {
 
 ///|
 /// min with Python/C++ std::min semantics (returns `a` unless `b < a`).
-fn fmin(a : Double, b : Double) -> Double {
+pub fn fmin(a : Double, b : Double) -> Double {
   if b < a {
     b
   } else {
@@ -245,7 +245,7 @@ fn fmin(a : Double, b : Double) -> Double {
 }
 
 ///|
-fn imin(a : Int, b : Int) -> Int {
+pub fn imin(a : Int, b : Int) -> Int {
   if b < a {
     b
   } else {
@@ -272,7 +272,7 @@ fn two_prod(a : Double, b : Double) -> (Double, Double) {
 /// Nearly correctly rounded hypot (like Python 3.10+ math.hypot). The
 /// geodesic code takes differences of products of normalized vectors, so
 /// last-bit errors here are amplified for very short lines.
-fn hypot(x0 : Double, y0 : Double) -> Double {
+pub fn hypot(x0 : Double, y0 : Double) -> Double {
   let x = x0.abs()
   let y = y0.abs()
   if x.is_inf() || y.is_inf() {

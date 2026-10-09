@@ -50,24 +50,24 @@ fn GeodesicLine::make(
   salp1_in : Double,
   calp1_in : Double,
 ) -> GeodesicLine {
-  let lat1 = lat_fix(lat1)
+  let lat1 = @geomath.lat_fix(lat1)
   let (azi1, salp1, calp1) = if salp1_in.is_nan() || calp1_in.is_nan() {
-    let (s, c) = sincosd(ang_round(azi1_in))
-    (ang_normalize(azi1_in), s, c)
+    let (s, c) = @geomath.sincosd(@geomath.ang_round(azi1_in))
+    (@geomath.ang_normalize(azi1_in), s, c)
   } else {
     (azi1_in, salp1_in, calp1_in)
   }
-  let (sb, cb) = sincosd(ang_round(lat1))
-  let (sbet1, cb1) = norm2(sb * geod.f1, cb)
-  let cbet1 = fmax(tiny, cb1)
-  let dn1 = (1.0 + geod.ep2 * sq(sbet1)).sqrt()
+  let (sb, cb) = @geomath.sincosd(@geomath.ang_round(lat1))
+  let (sbet1, cb1) = @geomath.norm2(sb * geod.f1, cb)
+  let cbet1 = @geomath.fmax(tiny, cb1)
+  let dn1 = (1.0 + geod.ep2 * @geomath.sq(sbet1)).sqrt()
   let salp0 = salp1 * cbet1
-  let calp0 = hypot(calp1, salp1 * sbet1)
+  let calp0 = @geomath.hypot(calp1, salp1 * sbet1)
   let somg1 = salp0 * sbet1
   let c0 = if sbet1 != 0.0 || calp1 != 0.0 { cbet1 * calp1 } else { 1.0 }
   let comg1 = c0
-  let (ssig1, csig1) = norm2(sbet1, c0)
-  let k2 = sq(calp0) * geod.ep2
+  let (ssig1, csig1) = @geomath.norm2(sbet1, c0)
+  let k2 = @geomath.sq(calp0) * geod.ep2
   let eps = k2 / (2.0 * (1.0 + (1.0 + k2).sqrt()) + k2)
   let a1m1 = a1m1f(eps)
   let c1a = FixedArray::make(order + 1, 0.0)
@@ -89,7 +89,7 @@ fn GeodesicLine::make(
   let b31 = sin_cos_series(true, ssig1, csig1, c3a)
   let c4a = FixedArray::make(order, 0.0)
   geod.c4f(eps, c4a)
-  let a4 = sq(geod.a) * calp0 * salp0 * geod.e2
+  let a4 = @geomath.sq(geod.a) * calp0 * salp0 * geod.e2
   let b41 = sin_cos_series(false, ssig1, csig1, c4a)
   {
     a: geod.a,
@@ -138,11 +138,11 @@ pub(all) struct DirectResult {
   azi1 : Double
   lat2 : Double
   lon2 : Double
-  /// Forward azimuth at point 2 (degrees).
+  /// Forward azimuth at point 2 (@geomath.degrees).
   azi2 : Double
   /// Distance (m).
   s12 : Double
-  /// Arc length on the auxiliary sphere (degrees).
+  /// Arc length on the auxiliary sphere (@geomath.degrees).
   a12 : Double
   /// Reduced length (m).
   m12 : Double
@@ -168,13 +168,13 @@ fn GeodesicLine::gen_position(
   let mut ssig12 = 0.0
   let mut csig12 = 0.0
   if arcmode {
-    sig12 = radians(s12_a12)
-    let (s, c) = sincosd(s12_a12)
+    sig12 = @geomath.radians(s12_a12)
+    let (s, c) = @geomath.sincosd(s12_a12)
     ssig12 = s
     csig12 = c
   } else {
     let mut tau12 = s12_a12 / (self.b * (1.0 + self.a1m1))
-    if !is_finite(tau12) {
+    if !@geomath.is_finite(tau12) {
       tau12 = @double.not_a_number
     }
     let s = @math.sin(tau12)
@@ -194,20 +194,20 @@ fn GeodesicLine::gen_position(
       b12 = sin_cos_series(true, ssig2, csig2, self.c1a)
       let serr = (1.0 + self.a1m1) * (sig12 + (b12 - self.b11)) -
         s12_a12 / self.b
-      sig12 = sig12 - serr / (1.0 + self.k2 * sq(ssig2)).sqrt()
+      sig12 = sig12 - serr / (1.0 + self.k2 * @geomath.sq(ssig2)).sqrt()
       ssig12 = @math.sin(sig12)
       csig12 = @math.cos(sig12)
     }
   }
   let ssig2 = self.ssig1 * csig12 + self.csig1 * ssig12
   let mut csig2 = self.csig1 * csig12 - self.ssig1 * ssig12
-  let dn2 = (1.0 + self.k2 * sq(ssig2)).sqrt()
+  let dn2 = (1.0 + self.k2 * @geomath.sq(ssig2)).sqrt()
   if arcmode || self.f.abs() > 0.01 {
     b12 = sin_cos_series(true, ssig2, csig2, self.c1a)
   }
   ab1 = (1.0 + self.a1m1) * (b12 - self.b11)
   let sbet2 = self.calp0 * ssig2
-  let mut cbet2 = hypot(self.salp0, self.calp0 * csig2)
+  let mut cbet2 = @geomath.hypot(self.salp0, self.calp0 * csig2)
   if cbet2 == 0.0 {
     cbet2 = tiny
     csig2 = tiny
@@ -222,7 +222,7 @@ fn GeodesicLine::gen_position(
   // longitude
   let somg2 = self.salp0 * ssig2
   let comg2 = csig2
-  let e = copysign(1.0, self.salp0)
+  let e = @geomath.copysign(1.0, self.salp0)
   let omg12 = if long_unroll {
     e *
     (
@@ -239,14 +239,16 @@ fn GeodesicLine::gen_position(
   let lam12 = omg12 +
     self.a3c *
     (sig12 + (sin_cos_series(true, ssig2, csig2, self.c3a) - self.b31))
-  let lon12 = degrees(lam12)
+  let lon12 = @geomath.degrees(lam12)
   let lon2 = if long_unroll {
     self.lon1 + lon12
   } else {
-    ang_normalize(ang_normalize(self.lon1) + ang_normalize(lon12))
+    @geomath.ang_normalize(
+      @geomath.ang_normalize(self.lon1) + @geomath.ang_normalize(lon12),
+    )
   }
-  let lat2 = atan2d(sbet2, self.f1 * cbet2)
-  let azi2 = atan2d(salp2, calp2)
+  let lat2 = @geomath.atan2d(sbet2, self.f1 * cbet2)
+  let azi2 = @geomath.atan2d(salp2, calp2)
   // reduced length and geodesic scale
   let b22 = sin_cos_series(true, ssig2, csig2, self.c2a)
   let ab2 = (1.0 + self.a2m1) * (b22 - self.b21)
@@ -279,18 +281,18 @@ fn GeodesicLine::gen_position(
       } else {
         ssig12 * (self.csig1 * ssig12 / (1.0 + csig12) + self.ssig1)
       }),
-      sq(self.salp0) + sq(self.calp0) * self.csig1 * csig2,
+      @geomath.sq(self.salp0) + @geomath.sq(self.calp0) * self.csig1 * csig2,
     )
   }
   let area12 = self.c2 * @math.atan2(salp12, calp12) +
     self.a4 * (b42 - self.b41)
-  let a12 = if arcmode { s12_a12 } else { degrees(sig12) }
+  let a12 = if arcmode { s12_a12 } else { @geomath.degrees(sig12) }
   {
     lat1: self.lat1,
     lon1: if long_unroll {
       self.lon1
     } else {
-      ang_normalize(self.lon1)
+      @geomath.ang_normalize(self.lon1)
     },
     azi1: self.azi1,
     lat2,
@@ -316,7 +318,7 @@ pub fn GeodesicLine::position(
 }
 
 ///|
-/// Position at arc length `a12` degrees from point 1.
+/// Position at arc length `a12` @geomath.degrees from point 1.
 pub fn GeodesicLine::arc_position(
   self : GeodesicLine,
   a12 : Double,
@@ -332,7 +334,7 @@ pub fn GeodesicLine::distance(self : GeodesicLine) -> Double {
 }
 
 ///|
-/// Arc length to the reference point 3 in degrees.
+/// Arc length to the reference point 3 in @geomath.degrees.
 pub fn GeodesicLine::arc(self : GeodesicLine) -> Double {
   self.a13
 }
@@ -357,7 +359,7 @@ pub fn GeodesicLine::densify(
   max_step : Double,
 ) -> Array[(Double, Double)] {
   let total = self.s13
-  let n = fmax(1.0, (total / max_step).ceil()).to_int()
+  let n = @geomath.fmax(1.0, (total / max_step).ceil()).to_int()
   let pts = []
   for i in 0..<=n {
     let p = self.position(total * i.to_double() / n.to_double())
@@ -389,7 +391,7 @@ pub fn Geodesic::inverse_line(
   lon2 : Double,
 ) -> GeodesicLine {
   let r = self.gen_inverse(lat1, lon1, lat2, lon2)
-  let azi1 = atan2d(r.salp1, r.calp1)
+  let azi1 = @geomath.atan2d(r.salp1, r.calp1)
   let line = GeodesicLine::make(self, lat1, lon1, azi1, r.salp1, r.calp1)
   line.set_arc(r.a12)
   line
@@ -411,7 +413,7 @@ pub fn Geodesic::direct_line(
 
 ///|
 /// Solve the direct geodesic problem: travel `s12` metres from (lat1, lon1)
-/// with initial azimuth `azi1` (degrees clockwise from north).
+/// with initial azimuth `azi1` (@geomath.degrees clockwise from north).
 pub fn Geodesic::direct(
   self : Geodesic,
   lat1 : Double,
@@ -424,7 +426,7 @@ pub fn Geodesic::direct(
 }
 
 ///|
-/// Direct problem with the distance given as an arc length in degrees.
+/// Direct problem with the distance given as an arc length in @geomath.degrees.
 pub fn Geodesic::arc_direct(
   self : Geodesic,
   lat1 : Double,

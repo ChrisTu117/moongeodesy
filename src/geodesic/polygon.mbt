@@ -10,8 +10,8 @@ struct Accumulator {
 
 ///|
 fn Accumulator::add(self : Accumulator, y0 : Double) -> Unit {
-  let (y, u0) = sum2(y0, self.t)
-  let (s, t) = sum2(y, self.s)
+  let (y, u0) = @geomath.sum2(y0, self.t)
+  let (s, t) = @geomath.sum2(y, self.s)
   self.s = s
   self.t = t
   if self.s == 0.0 {
@@ -39,7 +39,7 @@ fn Accumulator::negate(self : Accumulator) -> Unit {
 
 ///|
 fn Accumulator::remainder(self : Accumulator, y : Double) -> Unit {
-  self.s = remainder(self.s, y)
+  self.s = @geomath.remainder(self.s, y)
   self.add(0.0)
 }
 
@@ -84,7 +84,7 @@ pub fn Geodesic::polygon(
   {
     geod: self,
     polyline,
-    area0: 4.0 * pi * self.c2,
+    area0: 4.0 * @geomath.pi * self.c2,
     areasum: { s: 0.0, t: 0.0, },
     perimetersum: { s: 0.0, t: 0.0, },
     num: 0,
@@ -98,9 +98,9 @@ pub fn Geodesic::polygon(
 
 ///|
 fn transit(lon1_in : Double, lon2_in : Double) -> Int {
-  let (lon12, _) = ang_diff(lon1_in, lon2_in)
-  let lon1 = ang_normalize(lon1_in)
-  let lon2 = ang_normalize(lon2_in)
+  let (lon12, _) = @geomath.ang_diff(lon1_in, lon2_in)
+  let lon1 = @geomath.ang_normalize(lon1_in)
+  let lon2 = @geomath.ang_normalize(lon2_in)
   if lon12 > 0.0 && ((lon1 < 0.0 && lon2 >= 0.0) || (lon1 > 0.0 && lon2 == 0.0)) {
     1
   } else if lon12 < 0.0 && lon2 < 0.0 && lon1 >= 0.0 {
@@ -112,8 +112,8 @@ fn transit(lon1_in : Double, lon2_in : Double) -> Int {
 
 ///|
 fn transitdirect(lon1_in : Double, lon2_in : Double) -> Int {
-  let lon1 = remainder(lon1_in, 720.0)
-  let lon2 = remainder(lon2_in, 720.0)
+  let lon1 = @geomath.remainder(lon1_in, 720.0)
+  let lon2 = @geomath.remainder(lon2_in, 720.0)
   (if lon2 >= 0.0 && lon2 < 360.0 { 0 } else { 1 }) -
   (if lon1 >= 0.0 && lon1 < 360.0 { 0 } else { 1 })
 }
@@ -155,7 +155,7 @@ fn areareduce_b(
   reverse : Bool,
   sign : Bool,
 ) -> Double {
-  let mut area = remainder(area_in, area0)
+  let mut area = @geomath.remainder(area_in, area0)
   if (crossings & 1) != 0 {
     area = area + (if area < 0.0 { 1.0 } else { -1.0 }) * area0 / 2.0
   }
@@ -193,7 +193,7 @@ pub fn PolygonArea::clear(self : PolygonArea) -> Unit {
 }
 
 ///|
-/// Add a vertex (degrees).
+/// Add a vertex (@geomath.degrees).
 pub fn PolygonArea::add_point(
   self : PolygonArea,
   lat : Double,
@@ -218,7 +218,7 @@ pub fn PolygonArea::add_point(
 }
 
 ///|
-/// Add an edge given by azimuth `azi` (degrees) and length `s` (m)
+/// Add an edge given by azimuth `azi` (@geomath.degrees) and length `s` (m)
 /// from the current last vertex.
 pub fn PolygonArea::add_edge(
   self : PolygonArea,
@@ -352,7 +352,7 @@ pub fn PolygonArea::test_edge(
 
 ///|
 /// Convenience: area (m², counter-clockwise positive) and perimeter (m) of a
-/// closed polygon given as (lat, lon) vertices in degrees.
+/// closed polygon given as (lat, lon) vertices in @geomath.degrees.
 pub fn Geodesic::polygon_area(
   self : Geodesic,
   points : ArrayView[(Double, Double)],

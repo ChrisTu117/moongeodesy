@@ -20,22 +20,22 @@ let maxit1 : Int = 20
 let maxit2 : Int = 83 // maxit1 + 53 + 10
 
 ///|
-let tiny : Double = dbl_min.sqrt()
+let tiny : Double = @geomath.dbl_min.sqrt()
 
 ///|
-let tol0 : Double = dbl_epsilon
+let tol0 : Double = @geomath.dbl_epsilon
 
 ///|
-let tol1 : Double = 200.0 * dbl_epsilon
+let tol1 : Double = 200.0 * @geomath.dbl_epsilon
 
 ///|
-let tol2 : Double = dbl_epsilon.sqrt()
+let tol2 : Double = @geomath.dbl_epsilon.sqrt()
 
 ///|
-let tolb : Double = dbl_epsilon
+let tolb : Double = @geomath.dbl_epsilon
 
 ///|
-let xthresh : Double = 1000.0 * dbl_epsilon.sqrt()
+let xthresh : Double = 1000.0 * @geomath.dbl_epsilon.sqrt()
 
 // Output masks (subset of GeodesicCapability used internally).
 
@@ -88,12 +88,12 @@ pub struct Geodesic {
 pub fn Geodesic::new(a : Double, f : Double) -> Geodesic raise GeodesicError {
   let f1 = 1.0 - f
   let e2 = f * (2.0 - f)
-  let ep2 = e2 / sq(f1)
+  let ep2 = e2 / @geomath.sq(f1)
   let n = f / (2.0 - f)
   let b = a * f1
   let c2 = (
-      sq(a) +
-      sq(b) *
+      @geomath.sq(a) +
+      @geomath.sq(b) *
       (if e2 == 0.0 {
         1.0
       } else {
@@ -108,11 +108,11 @@ pub fn Geodesic::new(a : Double, f : Double) -> Geodesic raise GeodesicError {
     2.0
   let etol2 = 0.1 *
     tol2 /
-    (fmax(0.001, f.abs()) * fmin(1.0, 1.0 - f / 2.0) / 2.0).sqrt()
-  if !(is_finite(a) && a > 0.0) {
+    (@geomath.fmax(0.001, f.abs()) * @geomath.fmin(1.0, 1.0 - f / 2.0) / 2.0).sqrt()
+  if !(@geomath.is_finite(a) && a > 0.0) {
     raise InvalidEllipsoid("Equatorial radius is not positive")
   }
-  if !(is_finite(b) && b > 0.0) {
+  if !(@geomath.is_finite(b) && b > 0.0) {
     raise InvalidEllipsoid("Polar semi-axis is not positive")
   }
   let g : Geodesic = {
@@ -167,7 +167,7 @@ pub fn Geodesic::flattening(self : Geodesic) -> Double {
 ///|
 /// Total area of the ellipsoid in m².
 pub fn Geodesic::ellipsoid_area(self : Geodesic) -> Double {
-  4.0 * pi * self.c2
+  4.0 * @geomath.pi * self.c2
 }
 
 ///|
@@ -203,12 +203,12 @@ fn sin_cos_series(
 
 ///|
 fn astroid(x : Double, y : Double) -> Double {
-  let p = sq(x)
-  let q = sq(y)
+  let p = @geomath.sq(x)
+  let q = @geomath.sq(y)
   let r = (p + q - 1.0) / 6.0
   if !(q == 0.0 && r <= 0.0) {
     let s = p * q / 4.0
-    let r2 = sq(r)
+    let r2 = @geomath.sq(r)
     let r3 = r * r2
     let disc = s * (s + 2.0 * r3)
     let mut u = r
@@ -221,10 +221,10 @@ fn astroid(x : Double, y : Double) -> Double {
       let ang = @math.atan2((-disc).sqrt(), -(s + r3))
       u = u + 2.0 * r * @math.cos(ang / 3.0)
     }
-    let v = (sq(u) + q).sqrt()
+    let v = (@geomath.sq(u) + q).sqrt()
     let uv = if u < 0.0 { q / (v - u) } else { u + v }
     let w = (uv - q) / (2.0 * v)
-    uv / ((uv + sq(w)).sqrt() + w)
+    uv / ((uv + @geomath.sq(w)).sqrt() + w)
   } else {
     0.0
   }
@@ -236,7 +236,7 @@ let coeff_a1 : FixedArray[Double] = [1.0, 4.0, 64.0, 0.0, 256.0]
 ///|
 fn a1m1f(eps : Double) -> Double {
   let m = order / 2
-  let t = polyval(m, coeff_a1, 0, sq(eps)) / coeff_a1[m + 1]
+  let t = @geomath.polyval(m, coeff_a1, 0, @geomath.sq(eps)) / coeff_a1[m + 1]
   (t + eps) / (1.0 - eps)
 }
 
@@ -252,12 +252,12 @@ fn series_eps2(
   coeff : FixedArray[Double],
   c : FixedArray[Double],
 ) -> Unit {
-  let eps2 = sq(eps)
+  let eps2 = @geomath.sq(eps)
   let mut d = eps
   let mut o = 0
   for l in 1..<=order {
     let m = (order - l) / 2
-    c[l] = d * polyval(m, coeff, o, eps2) / coeff[o + m + 1]
+    c[l] = d * @geomath.polyval(m, coeff, o, eps2) / coeff[o + m + 1]
     o += m + 2
     d = d * eps
   }
@@ -285,7 +285,7 @@ let coeff_a2 : FixedArray[Double] = [-11.0, -28.0, -192.0, 0.0, 256.0]
 ///|
 fn a2m1f(eps : Double) -> Double {
   let m = order / 2
-  let t = polyval(m, coeff_a2, 0, sq(eps)) / coeff_a2[m + 1]
+  let t = @geomath.polyval(m, coeff_a2, 0, @geomath.sq(eps)) / coeff_a2[m + 1]
   (t - eps) / (1.0 + eps)
 }
 
@@ -311,8 +311,8 @@ fn Geodesic::a3coeff(self : Geodesic) -> Unit {
   let mut o = 0
   let mut k = 0
   for j = order - 1; j >= 0; j = j - 1 {
-    let m = imin(order - j - 1, j)
-    self.a3x[k] = polyval(m, coeff_a3, o, self.n) / coeff_a3[o + m + 1]
+    let m = @geomath.imin(order - j - 1, j)
+    self.a3x[k] = @geomath.polyval(m, coeff_a3, o, self.n) / coeff_a3[o + m + 1]
     k += 1
     o += m + 2
   }
@@ -332,8 +332,9 @@ fn Geodesic::c3coeff(self : Geodesic) -> Unit {
   let mut k = 0
   for l in 1..<order {
     for j = order - 1; j >= l; j = j - 1 {
-      let m = imin(order - j - 1, j)
-      self.c3x[k] = polyval(m, coeff_c3, o, self.n) / coeff_c3[o + m + 1]
+      let m = @geomath.imin(order - j - 1, j)
+      self.c3x[k] = @geomath.polyval(m, coeff_c3, o, self.n) /
+        coeff_c3[o + m + 1]
       k += 1
       o += m + 2
     }
@@ -359,7 +360,8 @@ fn Geodesic::c4coeff(self : Geodesic) -> Unit {
   for l in 0..<order {
     for j = order - 1; j >= l; j = j - 1 {
       let m = order - j - 1
-      self.c4x[k] = polyval(m, coeff_c4, o, self.n) / coeff_c4[o + m + 1]
+      self.c4x[k] = @geomath.polyval(m, coeff_c4, o, self.n) /
+        coeff_c4[o + m + 1]
       k += 1
       o += m + 2
     }
@@ -368,7 +370,7 @@ fn Geodesic::c4coeff(self : Geodesic) -> Unit {
 
 ///|
 fn Geodesic::a3f(self : Geodesic, eps : Double) -> Double {
-  polyval(order - 1, self.a3x, 0, eps)
+  @geomath.polyval(order - 1, self.a3x, 0, eps)
 }
 
 ///|
@@ -378,7 +380,7 @@ fn Geodesic::c3f(self : Geodesic, eps : Double, c : FixedArray[Double]) -> Unit 
   for l in 1..<order {
     let m = order - l - 1
     mult = mult * eps
-    c[l] = mult * polyval(m, self.c3x, o, eps)
+    c[l] = mult * @geomath.polyval(m, self.c3x, o, eps)
     o += m + 1
   }
 }
@@ -389,7 +391,7 @@ fn Geodesic::c4f(self : Geodesic, eps : Double, c : FixedArray[Double]) -> Unit 
   let mut o = 0
   for l in 0..<order {
     let m = order - l - 1
-    c[l] = mult * polyval(m, self.c4x, o, eps)
+    c[l] = mult * @geomath.polyval(m, self.c4x, o, eps)
     o += m + 1
     mult = mult * eps
   }
@@ -496,8 +498,8 @@ fn Geodesic::inverse_start(
   let mut somg12 = 0.0
   let mut comg12 = 0.0
   if shortline {
-    let mut sbetm2 = sq(sbet1 + sbet2)
-    sbetm2 = sbetm2 / (sbetm2 + sq(cbet1 + cbet2))
+    let mut sbetm2 = @geomath.sq(sbet1 + sbet2)
+    sbetm2 = sbetm2 / (sbetm2 + @geomath.sq(cbet1 + cbet2))
     dnm = (1.0 + self.ep2 * sbetm2).sqrt()
     let omg12 = lam12 / (self.f1 * dnm)
     somg12 = @math.sin(omg12)
@@ -508,25 +510,29 @@ fn Geodesic::inverse_start(
   }
   let mut salp1 = cbet2 * somg12
   let mut calp1 = if comg12 >= 0.0 {
-    sbet12 + cbet2 * sbet1 * sq(somg12) / (1.0 + comg12)
+    sbet12 + cbet2 * sbet1 * @geomath.sq(somg12) / (1.0 + comg12)
   } else {
-    sbet12a - cbet2 * sbet1 * sq(somg12) / (1.0 - comg12)
+    sbet12a - cbet2 * sbet1 * @geomath.sq(somg12) / (1.0 - comg12)
   }
-  let ssig12 = hypot(salp1, calp1)
+  let ssig12 = @geomath.hypot(salp1, calp1)
   let csig12 = sbet1 * sbet2 + cbet1 * cbet2 * comg12
   if shortline && ssig12 < self.etol2 {
     salp2 = cbet1 * somg12
     calp2 = sbet12 -
       cbet1 *
       sbet2 *
-      (if comg12 >= 0.0 { sq(somg12) / (1.0 + comg12) } else { 1.0 - comg12 })
-    let (s, c) = norm2(salp2, calp2)
+      (if comg12 >= 0.0 {
+        @geomath.sq(somg12) / (1.0 + comg12)
+      } else {
+        1.0 - comg12
+      })
+    let (s, c) = @geomath.norm2(salp2, calp2)
     salp2 = s
     calp2 = c
     sig12 = @math.atan2(ssig12, csig12)
   } else if self.n.abs() >= 0.1 ||
     csig12 >= 0.0 ||
-    ssig12 >= 6.0 * self.n.abs() * pi * sq(cbet1) {
+    ssig12 >= 6.0 * self.n.abs() * @geomath.pi * @geomath.sq(cbet1) {
     ()
   } else {
     let lam12x = @math.atan2(-slam12, -clam12)
@@ -535,9 +541,9 @@ fn Geodesic::inverse_start(
     let mut lamscale = 0.0
     let mut betscale = 0.0
     if self.f >= 0.0 {
-      let k2 = sq(sbet1) * self.ep2
+      let k2 = @geomath.sq(sbet1) * self.ep2
       let eps = k2 / (2.0 * (1.0 + (1.0 + k2).sqrt()) + k2)
-      lamscale = self.f * cbet1 * self.a3f(eps) * pi
+      lamscale = self.f * cbet1 * self.a3f(eps) * @geomath.pi
       betscale = lamscale * cbet1
       x = lam12x / lamscale
       y = sbet12a / betscale
@@ -546,7 +552,7 @@ fn Geodesic::inverse_start(
       let bet12a = @math.atan2(sbet12a, cbet12a)
       let (_, m12b, m0, _, _) = self.lengths(
         self.n,
-        pi + bet12a,
+        @geomath.pi + bet12a,
         sbet1,
         -cbet1,
         dn1,
@@ -559,18 +565,22 @@ fn Geodesic::inverse_start(
         c1a,
         c2a,
       )
-      x = -1.0 + m12b / (cbet1 * cbet2 * m0 * pi)
-      betscale = if x < -0.01 { sbet12a / x } else { -self.f * sq(cbet1) * pi }
+      x = -1.0 + m12b / (cbet1 * cbet2 * m0 * @geomath.pi)
+      betscale = if x < -0.01 {
+        sbet12a / x
+      } else {
+        -self.f * @geomath.sq(cbet1) * @geomath.pi
+      }
       lamscale = betscale / cbet1
       y = lam12x / lamscale
     }
     if y > -tol1 && x > -1.0 - xthresh {
       if self.f >= 0.0 {
-        salp1 = fmin(1.0, -x)
-        calp1 = -(1.0 - sq(salp1)).sqrt()
+        salp1 = @geomath.fmin(1.0, -x)
+        calp1 = -(1.0 - @geomath.sq(salp1)).sqrt()
       } else {
-        calp1 = fmax(if x > -tol1 { 0.0 } else { -1.0 }, x)
-        salp1 = (1.0 - sq(calp1)).sqrt()
+        calp1 = @geomath.fmax(if x > -tol1 { 0.0 } else { -1.0 }, x)
+        salp1 = (1.0 - @geomath.sq(calp1)).sqrt()
       }
     } else {
       let k = astroid(x, y)
@@ -579,11 +589,11 @@ fn Geodesic::inverse_start(
       somg12 = @math.sin(omg12a)
       comg12 = -@math.cos(omg12a)
       salp1 = cbet2 * somg12
-      calp1 = sbet12a - cbet2 * sbet1 * sq(somg12) / (1.0 - comg12)
+      calp1 = sbet12a - cbet2 * sbet1 * @geomath.sq(somg12) / (1.0 - comg12)
     }
   }
   if !(salp1 <= 0.0) {
-    let (s, c) = norm2(salp1, calp1)
+    let (s, c) = @geomath.norm2(salp1, calp1)
     salp1 = s
     calp1 = c
   } else {
@@ -628,13 +638,13 @@ fn Geodesic::lambda12(
 ) -> Lambda12Result {
   let calp1 = if sbet1 == 0.0 && calp1_in == 0.0 { -tiny } else { calp1_in }
   let salp0 = salp1 * cbet1
-  let calp0 = hypot(calp1, salp1 * sbet1)
+  let calp0 = @geomath.hypot(calp1, salp1 * sbet1)
   let somg1 = salp0 * sbet1
   let comg1 = calp1 * cbet1
-  let (ssig1, csig1) = norm2(sbet1, calp1 * cbet1)
+  let (ssig1, csig1) = @geomath.norm2(sbet1, calp1 * cbet1)
   let salp2 = if cbet2 != cbet1 { salp0 / cbet2 } else { salp1 }
   let calp2 = if cbet2 != cbet1 || sbet2.abs() != -sbet1 {
-    (sq(calp1 * cbet1) +
+    (@geomath.sq(calp1 * cbet1) +
     (if cbet1 < -sbet1 {
       (cbet2 - cbet1) * (cbet1 + cbet2)
     } else {
@@ -646,18 +656,18 @@ fn Geodesic::lambda12(
   }
   let somg2 = salp0 * sbet2
   let comg2 = calp2 * cbet2
-  let (ssig2, csig2) = norm2(sbet2, calp2 * cbet2)
+  let (ssig2, csig2) = @geomath.norm2(sbet2, calp2 * cbet2)
   let sig12 = @math.atan2(
-    fmax(0.0, csig1 * ssig2 - ssig1 * csig2) + 0.0,
+    @geomath.fmax(0.0, csig1 * ssig2 - ssig1 * csig2) + 0.0,
     csig1 * csig2 + ssig1 * ssig2,
   )
-  let somg12 = fmax(0.0, comg1 * somg2 - somg1 * comg2) + 0.0
+  let somg12 = @geomath.fmax(0.0, comg1 * somg2 - somg1 * comg2) + 0.0
   let comg12 = comg1 * comg2 + somg1 * somg2
   let eta = @math.atan2(
     somg12 * clam120 - comg12 * slam120,
     comg12 * clam120 + somg12 * slam120,
   )
-  let k2 = sq(calp0) * self.ep2
+  let k2 = @geomath.sq(calp0) * self.ep2
   let eps = k2 / (2.0 * (1.0 + (1.0 + k2).sqrt()) + k2)
   self.c3f(eps, c3a)
   let b312 = sin_cos_series(true, ssig2, csig2, c3a) -
@@ -722,15 +732,15 @@ fn Geodesic::gen_inverse(
   let mut mm12 = nan
   let mut mm21 = nan
   let mut ss12 = nan
-  let (lon12_0, lon12s_0) = ang_diff(lon1, lon2)
-  let mut lonsign = copysign(1.0, lon12_0)
+  let (lon12_0, lon12s_0) = @geomath.ang_diff(lon1, lon2)
+  let mut lonsign = @geomath.copysign(1.0, lon12_0)
   let lon12 = lonsign * lon12_0
   let mut lon12s = lonsign * lon12s_0
-  let lam12 = radians(lon12)
-  let (slam12, clam12) = sincosde(lon12, lon12s)
+  let lam12 = @geomath.radians(lon12)
+  let (slam12, clam12) = @geomath.sincosde(lon12, lon12s)
   lon12s = 180.0 - lon12 - lon12s
-  let mut lat1 = ang_round(lat_fix(lat1_in))
-  let mut lat2 = ang_round(lat_fix(lat2_in))
+  let mut lat1 = @geomath.ang_round(@geomath.lat_fix(lat1_in))
+  let mut lat2 = @geomath.ang_round(@geomath.lat_fix(lat2_in))
   let swapp = if lat1.abs() < lat2.abs() || lat2.is_nan() { -1.0 } else { 1.0 }
   if swapp < 0.0 {
     lonsign = -lonsign
@@ -738,25 +748,25 @@ fn Geodesic::gen_inverse(
     lat1 = lat2
     lat2 = t
   }
-  let latsign = copysign(1.0, -lat1)
+  let latsign = @geomath.copysign(1.0, -lat1)
   lat1 = lat1 * latsign
   lat2 = lat2 * latsign
-  let (sb1, cb1) = sincosd(lat1)
-  let (sbet1, cbet1_0) = norm2(sb1 * self.f1, cb1)
-  let cbet1 = fmax(tiny, cbet1_0)
-  let (sb2, cb2) = sincosd(lat2)
-  let (sbet2_0, cbet2_0) = norm2(sb2 * self.f1, cb2)
+  let (sb1, cb1) = @geomath.sincosd(lat1)
+  let (sbet1, cbet1_0) = @geomath.norm2(sb1 * self.f1, cb1)
+  let cbet1 = @geomath.fmax(tiny, cbet1_0)
+  let (sb2, cb2) = @geomath.sincosd(lat2)
+  let (sbet2_0, cbet2_0) = @geomath.norm2(sb2 * self.f1, cb2)
   let mut sbet2 = sbet2_0
-  let mut cbet2 = fmax(tiny, cbet2_0)
+  let mut cbet2 = @geomath.fmax(tiny, cbet2_0)
   if cbet1 < -sbet1 {
     if cbet2 == cbet1 {
-      sbet2 = copysign(sbet1, sbet2)
+      sbet2 = @geomath.copysign(sbet1, sbet2)
     }
   } else if sbet2.abs() == -sbet1 {
     cbet2 = cbet1
   }
-  let dn1 = (1.0 + self.ep2 * sq(sbet1)).sqrt()
-  let dn2 = (1.0 + self.ep2 * sq(sbet2)).sqrt()
+  let dn1 = (1.0 + self.ep2 * @geomath.sq(sbet1)).sqrt()
+  let dn2 = (1.0 + self.ep2 * @geomath.sq(sbet2)).sqrt()
   let c1a = FixedArray::make(order + 1, 0.0)
   let c2a = FixedArray::make(order + 1, 0.0)
   let c3a = FixedArray::make(order, 0.0)
@@ -778,7 +788,7 @@ fn Geodesic::gen_inverse(
     let ssig2 = sbet2
     let csig2 = calp2 * cbet2
     sig12 = @math.atan2(
-      fmax(0.0, csig1 * ssig2 - ssig1 * csig2) + 0.0,
+      @geomath.fmax(0.0, csig1 * ssig2 - ssig1 * csig2) + 0.0,
       csig1 * csig2 + ssig1 * ssig2,
     )
     let (sx, mx, _, m1, m2) = self.lengths(
@@ -808,7 +818,7 @@ fn Geodesic::gen_inverse(
       }
       m12x = m12x * self.b
       s12x = s12x * self.b
-      a12 = degrees(sig12)
+      a12 = @geomath.degrees(sig12)
     } else {
       meridian = false
     }
@@ -839,10 +849,10 @@ fn Geodesic::gen_inverse(
     calp2 = ca2
     if sig12 >= 0.0 {
       s12x = sig12 * self.b * dnm
-      m12x = sq(dnm) * self.b * @math.sin(sig12 / dnm)
+      m12x = @geomath.sq(dnm) * self.b * @math.sin(sig12 / dnm)
       mm12 = @math.cos(sig12 / dnm)
       mm21 = mm12
-      a12 = degrees(sig12)
+      a12 = @geomath.degrees(sig12)
       omg12 = lam12 / (self.f1 * dnm)
     } else {
       let mut numit = 0
@@ -899,14 +909,14 @@ fn Geodesic::gen_inverse(
         numit += 1
         if numit < maxit1 && dv > 0.0 {
           let dalp1 = -v / dv
-          if dalp1.abs() < pi {
+          if dalp1.abs() < @geomath.pi {
             let sdalp1 = @math.sin(dalp1)
             let cdalp1 = @math.cos(dalp1)
             let nsalp1 = salp1 * cdalp1 + calp1 * sdalp1
             if nsalp1 > 0.0 {
               calp1 = calp1 * cdalp1 - salp1 * sdalp1
               salp1 = nsalp1
-              let (s, c) = norm2(salp1, calp1)
+              let (s, c) = @geomath.norm2(salp1, calp1)
               salp1 = s
               calp1 = c
               tripn = v.abs() <= 16.0 * tol0
@@ -916,7 +926,7 @@ fn Geodesic::gen_inverse(
         }
         salp1 = (salp1a + salp1b) / 2.0
         calp1 = (calp1a + calp1b) / 2.0
-        let (s, c) = norm2(salp1, calp1)
+        let (s, c) = @geomath.norm2(salp1, calp1)
         salp1 = s
         calp1 = c
         tripn = false
@@ -945,7 +955,7 @@ fn Geodesic::gen_inverse(
       mm21 = m2
       m12x = mx * self.b
       s12x = sx * self.b
-      a12 = degrees(sig12)
+      a12 = @geomath.degrees(sig12)
       let sdomg12 = @math.sin(r.domg12)
       let cdomg12 = @math.cos(r.domg12)
       somg12 = slam12 * cdomg12 - clam12 * sdomg12
@@ -956,13 +966,13 @@ fn Geodesic::gen_inverse(
   m12 = 0.0 + m12x
   // Area
   let salp0 = salp1 * cbet1
-  let calp0 = hypot(calp1, salp1 * sbet1)
+  let calp0 = @geomath.hypot(calp1, salp1 * sbet1)
   if calp0 != 0.0 && salp0 != 0.0 {
-    let (ssig1, csig1) = norm2(sbet1, calp1 * cbet1)
-    let (ssig2, csig2) = norm2(sbet2, calp2 * cbet2)
-    let k2 = sq(calp0) * self.ep2
+    let (ssig1, csig1) = @geomath.norm2(sbet1, calp1 * cbet1)
+    let (ssig2, csig2) = @geomath.norm2(sbet2, calp2 * cbet2)
+    let k2 = @geomath.sq(calp0) * self.ep2
     let eps = k2 / (2.0 * (1.0 + (1.0 + k2).sqrt()) + k2)
-    let a4 = sq(self.a) * calp0 * salp0 * self.e2
+    let a4 = @geomath.sq(self.a) * calp0 * salp0 * self.e2
     let c4a = FixedArray::make(order, 0.0)
     self.c4f(eps, c4a)
     let b41 = sin_cos_series(false, ssig1, csig1, c4a)
@@ -1023,11 +1033,11 @@ pub(all) struct InverseResult {
   lon2 : Double
   /// Distance between the points (m).
   s12 : Double
-  /// Azimuth at point 1 (degrees clockwise from north).
+  /// Azimuth at point 1 (@geomath.degrees clockwise from north).
   azi1 : Double
-  /// Forward azimuth at point 2 (degrees).
+  /// Forward azimuth at point 2 (@geomath.degrees).
   azi2 : Double
-  /// Arc length on the auxiliary sphere (degrees).
+  /// Arc length on the auxiliary sphere (@geomath.degrees).
   a12 : Double
   /// Reduced length m12 (m).
   m12 : Double
@@ -1056,23 +1066,23 @@ pub fn Geodesic::inverse(
 ) -> InverseResult {
   let r = self.gen_inverse(lat1, lon1, lat2, lon2)
   let lon2o = if long_unroll {
-    let (lon12, e) = ang_diff(lon1, lon2)
+    let (lon12, e) = @geomath.ang_diff(lon1, lon2)
     lon1 + lon12 + e
   } else {
-    ang_normalize(lon2)
+    @geomath.ang_normalize(lon2)
   }
   {
-    lat1: lat_fix(lat1),
+    lat1: @geomath.lat_fix(lat1),
     lon1: if long_unroll {
       lon1
     } else {
-      ang_normalize(lon1)
+      @geomath.ang_normalize(lon1)
     },
-    lat2: lat_fix(lat2),
+    lat2: @geomath.lat_fix(lat2),
     lon2: lon2o,
     s12: r.s12,
-    azi1: atan2d(r.salp1, r.calp1),
-    azi2: atan2d(r.salp2, r.calp2),
+    azi1: @geomath.atan2d(r.salp1, r.calp1),
+    azi2: @geomath.atan2d(r.salp2, r.calp2),
     a12: r.a12,
     m12: r.m12,
     scale12: r.mm12,
