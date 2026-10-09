@@ -1,0 +1,126 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ChrisTu117/moongeodesy/geodesic"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let wgs84_a : Double
+
+pub let wgs84_f : Double
+
+// Errors
+pub suberror GeodesicError {
+  InvalidEllipsoid(String)
+} derive(@debug.Debug)
+pub fn GeodesicError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub(all) struct DirectResult {
+  lat1 : Double
+  lon1 : Double
+  azi1 : Double
+  lat2 : Double
+  lon2 : Double
+  azi2 : Double
+  s12 : Double
+  a12 : Double
+  m12 : Double
+  scale12 : Double
+  scale21 : Double
+  area12 : Double
+} derive(@debug.Debug)
+pub fn DirectResult::to_repr(Self) -> @debug.Repr
+
+pub struct Geodesic {
+  a : Double
+  f : Double
+  f1 : Double
+  e2 : Double
+  ep2 : Double
+  n : Double
+  b : Double
+  c2 : Double
+  etol2 : Double
+  a3x : FixedArray[Double]
+  c3x : FixedArray[Double]
+  c4x : FixedArray[Double]
+}
+pub fn Geodesic::arc_direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> DirectResult
+pub fn Geodesic::direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> DirectResult
+pub fn Geodesic::direct_line(Self, Double, Double, Double, Double) -> GeodesicLine
+pub fn Geodesic::distance(Self, Double, Double, Double, Double) -> Double
+pub fn Geodesic::ellipsoid_area(Self) -> Double
+pub fn Geodesic::equatorial_radius(Self) -> Double
+pub fn Geodesic::flattening(Self) -> Double
+pub fn Geodesic::inverse(Self, Double, Double, Double, Double, long_unroll? : Bool) -> InverseResult
+pub fn Geodesic::inverse_line(Self, Double, Double, Double, Double) -> GeodesicLine
+pub fn Geodesic::line(Self, Double, Double, Double) -> GeodesicLine
+pub fn Geodesic::new(Double, Double) -> Self raise GeodesicError
+pub fn Geodesic::wgs84() -> Self
+
+pub struct GeodesicLine {
+  a : Double
+  f : Double
+  b : Double
+  c2 : Double
+  f1 : Double
+  lat1 : Double
+  lon1 : Double
+  azi1 : Double
+  salp1 : Double
+  calp1 : Double
+  dn1 : Double
+  salp0 : Double
+  calp0 : Double
+  ssig1 : Double
+  csig1 : Double
+  somg1 : Double
+  comg1 : Double
+  k2 : Double
+  a1m1 : Double
+  c1a : FixedArray[Double]
+  b11 : Double
+  stau1 : Double
+  ctau1 : Double
+  c1pa : FixedArray[Double]
+  a2m1 : Double
+  c2a : FixedArray[Double]
+  b21 : Double
+  c3a : FixedArray[Double]
+  a3c : Double
+  b31 : Double
+  c4a : FixedArray[Double]
+  a4 : Double
+  b41 : Double
+  mut s13 : Double
+  mut a13 : Double
+}
+pub fn GeodesicLine::arc(Self) -> Double
+pub fn GeodesicLine::arc_position(Self, Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicLine::densify(Self, Double) -> Array[(Double, Double)]
+pub fn GeodesicLine::distance(Self) -> Double
+pub fn GeodesicLine::position(Self, Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicLine::set_arc(Self, Double) -> Unit
+pub fn GeodesicLine::set_distance(Self, Double) -> Unit
+
+pub(all) struct InverseResult {
+  lat1 : Double
+  lon1 : Double
+  lat2 : Double
+  lon2 : Double
+  s12 : Double
+  azi1 : Double
+  azi2 : Double
+  a12 : Double
+  m12 : Double
+  scale12 : Double
+  scale21 : Double
+  area12 : Double
+} derive(@debug.Debug)
+pub fn InverseResult::to_repr(Self) -> @debug.Repr
+
+// Type aliases
+
+// Traits
