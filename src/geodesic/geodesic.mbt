@@ -84,7 +84,10 @@ pub struct Geodesic {
 
 ///|
 /// Construct an ellipsoid with equatorial radius `a` (metres) and
-/// flattening `f`. Raises if `a` or the polar semi-axis is not positive.
+/// flattening `f`. Raises `InvalidEllipsoid` when `a` or the polar
+/// semi-axis `a * (1 - f)` is not finite and positive.
+/// The series assume modest flattening (`|f|` up to about 1/50).
+/// WGS-84, GRS80, and CGCS2000 are inside that range.
 pub fn Geodesic::new(a : Double, f : Double) -> Geodesic raise GeodesicError {
   let f1 = 1.0 - f
   let e2 = f * (2.0 - f)
@@ -174,11 +177,13 @@ pub fn Geodesic::cgcs2000() -> Geodesic {
 }
 
 ///|
+/// Equatorial radius `a` in metres.
 pub fn Geodesic::equatorial_radius(self : Geodesic) -> Double {
   self.a
 }
 
 ///|
+/// Flattening `f` (dimensionless).
 pub fn Geodesic::flattening(self : Geodesic) -> Double {
   self.f
 }
@@ -1046,23 +1051,27 @@ fn Geodesic::gen_inverse(
 ///|
 /// Result of the inverse geodesic problem.
 pub(all) struct InverseResult {
+  /// Latitude of point 1 (degrees). NaN when the input was outside [-90, 90].
   lat1 : Double
+  /// Longitude of point 1 (degrees), reduced to [-180, 180] unless unrolled.
   lon1 : Double
+  /// Latitude of point 2 (degrees).
   lat2 : Double
+  /// Longitude of point 2 (degrees).
   lon2 : Double
   /// Distance between the points (m).
   s12 : Double
-  /// Azimuth at point 1 (@geomath.degrees clockwise from north).
+  /// Azimuth at point 1 (degrees clockwise from north).
   azi1 : Double
-  /// Forward azimuth at point 2 (@geomath.degrees).
+  /// Forward azimuth at point 2 (degrees clockwise from north).
   azi2 : Double
-  /// Arc length on the auxiliary sphere (@geomath.degrees).
+  /// Arc length on the auxiliary sphere (degrees).
   a12 : Double
-  /// Reduced length m12 (m).
+  /// Reduced length (m).
   m12 : Double
-  /// Geodesic scale M12.
+  /// Geodesic scale M12 (dimensionless).
   scale12 : Double
-  /// Geodesic scale M21.
+  /// Geodesic scale M21 (dimensionless).
   scale21 : Double
   /// Area between the geodesic and the equator, S12 (m²).
   area12 : Double
@@ -1073,8 +1082,17 @@ pub extend InverseResult with @debug.Debug::{to_repr}
 
 ///|
 /// Solve the inverse geodesic problem: the shortest path between two points.
-/// With `long_unroll=true`, `lon2` is reported as `lon1` plus the signed
-/// longitude difference instead of being reduced to [-180, 180].
+///
+/// Latitudes, longitudes, and azimuths are degrees. `s12` and `m12` are
+/// metres. `area12` is square metres. Azimuth is clockwise from north.
+/// A latitude outside [-90, 90] comes back as NaN. No error is raised.
+/// Longitudes are reduced to [-180, 180] unless `long_unroll` is true.
+/// Use `long_unroll` when the path crosses the antimeridian and longitude
+/// must stay continuous (`lon2 = lon1 + signed difference`).
+/// Latitude ±90 is a valid pole. The azimuth there is defined.
+/// Nearly antipodal points can have more than one shortest geodesic.
+/// Then `s12` is unique, but `azi1`, `azi2`, and `area12` follow one of
+/// them. That matches GeographicLib.
 pub fn Geodesic::inverse(
   self : Geodesic,
   lat1 : Double,

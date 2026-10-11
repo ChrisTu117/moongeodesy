@@ -19,14 +19,17 @@ pub extend UtmError with @debug.Debug::{to_repr}
 ///|
 /// A UTM or UPS coordinate. `zone` is 1..=60 for UTM and 0 for UPS.
 pub(all) struct UtmCoord {
+  /// UTM zone 1..=60, or 0 for UPS.
   zone : Int
   /// Northern hemisphere (UTM) or north polar (UPS).
   north : Bool
+  /// Easting (m), including the false easting.
   easting : Double
+  /// Northing (m), including the false northing.
   northing : Double
   /// Meridian convergence (degrees).
   gamma : Double
-  /// Point scale factor.
+  /// Point scale factor (dimensionless).
   k : Double
 } derive(Debug)
 
@@ -84,8 +87,16 @@ pub fn central_meridian(zone : Int) -> Double {
 }
 
 ///|
-/// Convert geographic coordinates (degrees) to UTM/UPS. By default the
-/// standard zone is used; pass `zone` (1..=60, or 0 for UPS) to force one.
+/// Convert geographic coordinates (degrees) to UTM or UPS metres.
+/// A latitude outside [-90, 90], including NaN, raises `InvalidLatitude`.
+/// The default zone is `standard_zone`: UPS when `lat >= 84` or `lat < -80`,
+/// otherwise UTM, including the Norway and Svalbard exceptions.
+/// Pass `zone` 1..=60 or 0 (UPS) to force a zone.
+/// Any other zone raises `InvalidZone`.
+/// Easting and northing include the standard false offsets
+/// (UTM easting 500 km; southern UTM northing 10_000 km; UPS 2_000 km).
+/// Latitude exactly ±90 is accepted but the UPS easting and northing are NaN.
+/// A point a fraction of a degree off the pole is finite.
 pub fn from_latlon(
   lat : Double,
   lon : Double,
@@ -126,7 +137,11 @@ pub fn from_latlon(
 }
 
 ///|
-/// Convert UTM/UPS coordinates back to geographic (degrees).
+/// Convert UTM or UPS metres back to geographic degrees.
+/// `zone` 0 is UPS and 1..=60 is UTM. Any other zone raises `InvalidZone`.
+/// A non-finite easting or northing, or one with absolute value
+/// >= 1e8 m, raises `OutOfRange`.
+/// Longitude ±180 falls in UTM zone 1.
 pub fn to_latlon(
   zone : Int,
   north : Bool,

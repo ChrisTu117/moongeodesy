@@ -14,6 +14,7 @@ pub struct PolarStereographic {
 }
 
 ///|
+/// Equatorial radius `a` (m), flattening `f`, and central scale `k0`.
 pub fn PolarStereographic::new(
   a : Double,
   f : Double,
@@ -40,7 +41,10 @@ pub fn PolarStereographic::ups() -> PolarStereographic {
 }
 
 ///|
-/// Project (lat, lon) about the north (`northp=true`) or south pole.
+/// Project `(lat, lon)` in degrees about the north pole (`northp=true`)
+/// or the south pole. `x` and `y` are metres from the pole.
+/// Latitude exactly ±90 yields NaN for `x` and `y`. A point a fraction of
+/// a degree off the pole is finite.
 pub fn PolarStereographic::forward(
   self : PolarStereographic,
   northp : Bool,

@@ -83,6 +83,20 @@ moon run src/examples/cli -- coord bd2wgs 39.91645 116.41012
 
 `coord` also accepts `gcj2bd` and `bd2gcj`. Run `moon run src/examples/cli` to print the full command list.
 
+## API reference
+
+Signatures, units, and edge cases are in the package notes. `moon check` and `moon test` run the short example in each section.
+
+- [`geodesic`](src/geodesic/README.mbt.md) — ellipsoids, inverse and direct, lines, polygons
+- [`utm`](src/utm/README.mbt.md) — transverse Mercator, UTM/UPS, MGRS
+- [`cn`](src/cn/README.mbt.md) — WGS-84, GCJ-02, BD-09
+
+Preview the generated symbol pages (`///` comments plus these notes):
+
+```bash
+moon doc --serve
+```
+
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
@@ -152,3 +166,5 @@ moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
 ```
 
 `geod inverse` 求 WGS-84 最短距离与方位角，`geod direct` 做正算。`coord` 支持 `wgs2gcj`、`gcj2wgs`、`gcj2bd`、`bd2gcj`、`wgs2bd`、`bd2wgs`。无参数时打印命令列表。
+
+接口说明（单位、边界、短示例）在 `src/geodesic/README.mbt.md`、`src/utm/README.mbt.md`、`src/cn/README.mbt.md`。本地预览：`moon doc --serve`。

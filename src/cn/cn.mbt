@@ -7,13 +7,18 @@
 /// - BD-09: Baidu Maps, an additional offset applied on top of GCJ-02.
 ///
 /// The forward GCJ-02 transform is the widely published reverse-engineered
-/// algorithm (compatible with `coordtransform`, `gcoord`, `coord-convert`); outside mainland China the
-/// transform is the identity, as with the official encryption.
+/// algorithm (compatible with `coordtransform`, `gcoord`, `coord-convert`).
+/// Outside the `out_of_china` box the GCJ-02 transform is the identity.
+/// BD-09 is still applied outside that box.
+/// `out_of_china` is a bounding box, not the national border.
+/// Angles are decimal degrees. These functions do not raise.
 
 ///|
 /// A geographic position in decimal degrees.
 pub(all) struct LatLon {
+  /// Latitude (decimal degrees). Not range-checked.
   lat : Double
+  /// Longitude (decimal degrees). Not range-checked.
   lon : Double
 } derive(Eq, Debug)
 
@@ -32,6 +37,7 @@ pub extend LatLon with @debug.Debug::{to_repr}
 pub extend LatLon with Eq::{equal, not_equal}
 
 ///|
+/// Latitude and longitude in decimal degrees. Values are not range-checked.
 pub fn LatLon::new(lat : Double, lon : Double) -> LatLon {
   { lat, lon, }
 }
@@ -51,8 +57,10 @@ let gcj_ee : Double = 0.00669342162296594323
 let x_pi : Double = 3.14159265358979324 * 3000.0 / 180.0
 
 ///|
-/// Returns true when the point lies outside the rough bounding box of
-/// mainland China, where GCJ-02 equals WGS-84.
+/// Returns true outside the usual mainland-China bounding box:
+/// longitude 72.004°..137.8347°, latitude 0.8293°..55.8271°.
+/// Inside that box GCJ-02 differs from WGS-84. Outside it, GCJ-02 equals
+/// WGS-84. The test is not a precise national border.
 pub fn out_of_china(lat : Double, lon : Double) -> Bool {
   lon < 72.004 || lon > 137.8347 || lat < 0.8293 || lat > 55.8271
 }
@@ -108,7 +116,10 @@ fn gcj_delta(lat : Double, lon : Double) -> (Double, Double) {
 }
 
 ///|
-/// WGS-84 → GCJ-02.
+/// WGS-84 → GCJ-02 (degrees).
+/// Outside `out_of_china` the result equals the input.
+/// Inside the box this is the published Krasovsky algorithm.
+/// Agreement with the official cipher is about 1 m.
 pub fn wgs84_to_gcj02(p : LatLon) -> LatLon {
   if out_of_china(p.lat, p.lon) {
     return p
@@ -118,7 +129,9 @@ pub fn wgs84_to_gcj02(p : LatLon) -> LatLon {
 }
 
 ///|
-/// GCJ-02 → WGS-84, single-step approximation (error up to ~1–2 m).
+/// GCJ-02 → WGS-84, one-step approximation (error up to about 1–2 m).
+/// Outside `out_of_china` the result equals the input.
+/// Prefer `gcj02_to_wgs84` when the round trip must stay under 1e-9°.
 pub fn gcj02_to_wgs84_approx(p : LatLon) -> LatLon {
   if out_of_china(p.lat, p.lon) {
     return p
@@ -147,7 +160,9 @@ fn invert(f : (LatLon) -> LatLon, target : LatLon) -> LatLon {
 }
 
 ///|
-/// GCJ-02 → WGS-84, exact inverse (round-trips to < 1e-9 degrees).
+/// GCJ-02 → WGS-84 by fixed-point iteration.
+/// A round trip through `wgs84_to_gcj02` stays under 1e-9 degrees.
+/// Outside `out_of_china` the result equals the input.
 pub fn gcj02_to_wgs84(p : LatLon) -> LatLon {
   if out_of_china(p.lat, p.lon) {
     return p
@@ -156,7 +171,8 @@ pub fn gcj02_to_wgs84(p : LatLon) -> LatLon {
 }
 
 ///|
-/// GCJ-02 → BD-09 (Baidu).
+/// GCJ-02 → BD-09 (Baidu), in degrees.
+/// The offset is applied everywhere, including points outside China.
 pub fn gcj02_to_bd09(p : LatLon) -> LatLon {
   let x = p.lon
   let y = p.lat
@@ -183,13 +199,15 @@ pub fn bd09_to_gcj02(p : LatLon) -> LatLon {
 }
 
 ///|
-/// WGS-84 → BD-09.
+/// WGS-84 → BD-09. This is `gcj02_to_bd09(wgs84_to_gcj02(p))`.
+/// Outside China only the BD-09 offset remains.
 pub fn wgs84_to_bd09(p : LatLon) -> LatLon {
   gcj02_to_bd09(wgs84_to_gcj02(p))
 }
 
 ///|
-/// BD-09 → WGS-84 (exact).
+/// BD-09 → WGS-84 by the two exact inverses.
+/// A round trip through `wgs84_to_bd09` stays under 1e-9 degrees.
 pub fn bd09_to_wgs84(p : LatLon) -> LatLon {
   gcj02_to_wgs84(bd09_to_gcj02(p))
 }
