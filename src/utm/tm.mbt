@@ -71,11 +71,13 @@ pub struct TransverseMercator {
 ///|
 /// Result of a forward projection.
 pub(all) struct Projected {
+  /// Easting from the origin (m). No false easting is applied.
   x : Double
+  /// Northing from the origin (m). No false northing is applied.
   y : Double
   /// Meridian convergence (degrees).
   gamma : Double
-  /// Point scale factor.
+  /// Point scale factor (dimensionless).
   k : Double
 } derive(Debug)
 
@@ -85,11 +87,13 @@ pub extend Projected with @debug.Debug::{to_repr}
 ///|
 /// Result of a reverse projection.
 pub(all) struct Geographic {
+  /// Latitude (degrees).
   lat : Double
+  /// Longitude (degrees).
   lon : Double
   /// Meridian convergence (degrees).
   gamma : Double
-  /// Point scale factor.
+  /// Point scale factor (dimensionless).
   k : Double
 } derive(Debug)
 
@@ -176,8 +180,11 @@ let utm_tm : TransverseMercator = TransverseMercator::new(
 )
 
 ///|
-/// Project (lat, lon) with central meridian `lon0` (all degrees).
-/// x is easting and y northing from the central meridian / equator (m).
+/// Project `(lat, lon)` with central meridian `lon0`. All angles are degrees.
+/// `x` is easting and `y` is northing from the central meridian and the
+/// equator (m). No false offsets are applied.
+/// The 6th-order series stays within a few nanometres for points within
+/// about 3900 km of the central meridian. Latitude ±90 is valid.
 pub fn TransverseMercator::forward(
   self : TransverseMercator,
   lon0 : Double,

@@ -3,7 +3,8 @@
 Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.14.
 
 ## Status: all three priorities implemented and tested
-`moon test --target all` → 36 tests pass on wasm, wasm-gc, js and native;
+`moon test --target all` → 45 tests pass on wasm, wasm-gc, js, and native
+(9 of them are the API-doc examples).
 `moon check --deny-warn`, `moon fmt --check` and `moon package --list` are clean.
 
 ### 1. `cn` — WGS-84 / GCJ-02 / BD-09 ✅
@@ -34,7 +35,7 @@ Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.
 - [ ] rhumb lines; geodesic intersections; `GeodesicExact` for |f| > 0.02
 - [ ] optional finer China boundary polygon for `out_of_china` (currently the usual bounding box)
 - [ ] benchmarks (`moon bench`)
-- [ ] docs: README.mbt.md doc-tests, API docs on mooncakes
+- [x] docs: package `README.mbt.md` for `geodesic`, `utm`, and `cn` (checked examples), plus `///` notes for `moon doc` / mooncakes. Preview: `moon doc --serve`
 
 ## Needs the user (not done by the agent)
 - create public GitHub repo `ChrisTu117/moongeodesy`, then push (`git remote add origin … && git push -u origin main`)

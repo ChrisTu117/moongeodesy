@@ -218,8 +218,9 @@ pub fn PolygonArea::add_point(
 }
 
 ///|
-/// Add an edge given by azimuth `azi` (@geomath.degrees) and length `s` (m)
-/// from the current last vertex.
+/// Add an edge given by azimuth `azi` (degrees, clockwise from north) and
+/// length `s` (m) from the current last vertex.
+/// The call does nothing when the polygon has no vertex yet.
 pub fn PolygonArea::add_edge(
   self : PolygonArea,
   azi : Double,
@@ -239,9 +240,11 @@ pub fn PolygonArea::add_edge(
 }
 
 ///|
-/// Compute perimeter and area of the polygon so far. With `sign=true`
-/// (default) the area is signed (counter-clockwise positive); with
-/// `reverse=true`, clockwise traversal counts as positive.
+/// Compute perimeter (m) and area (m²) of the polygon so far.
+/// With `sign=true` (default) the area is signed: counter-clockwise is
+/// positive. With `reverse=true`, clockwise traversal counts as positive.
+/// A polyline returns NaN for `area`. A pole or an antimeridian crossing
+/// is included in the area. Fewer than two vertices gives perimeter 0.
 pub fn PolygonArea::compute(
   self : PolygonArea,
   reverse? : Bool = false,
@@ -351,8 +354,10 @@ pub fn PolygonArea::test_edge(
 }
 
 ///|
-/// Convenience: area (m², counter-clockwise positive) and perimeter (m) of a
-/// closed polygon given as (lat, lon) vertices in @geomath.degrees.
+/// Area (m², counter-clockwise positive) and perimeter (m) of a closed
+/// polygon. Vertices are `(lat, lon)` in degrees.
+/// The polygon may enclose a pole or cross the antimeridian.
+/// An empty vertex list returns area 0 and perimeter 0.
 pub fn Geodesic::polygon_area(
   self : Geodesic,
   points : ArrayView[(Double, Double)],

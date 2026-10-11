@@ -71,9 +71,13 @@ fn pad_digits(v : Int64, width : Int) -> String {
 }
 
 ///|
-/// Encode a UTM/UPS coordinate as MGRS. `precision` is the number of digits
-/// per coordinate: 5 → 1 m, 4 → 10 m, ..., 0 → 100 km square only, up to
-/// 11 (1 µm). The latitude `lat` is used to pick the UTM latitude band.
+/// Encode a UTM/UPS coordinate as MGRS.
+/// `precision` is the number of digits per easting and per northing:
+/// 5 → 1 m, 4 → 10 m, 0 → the 100 km square only, up to 11 (1 µm).
+/// A precision outside 0..=11 raises `OutOfRange`.
+/// `lat` (degrees) selects the UTM latitude band (C–X; I and O are omitted).
+/// UPS uses bands A, B, Y, and Z. An easting outside 100 km..900 km,
+/// or a UPS point outside the polar grid, raises `OutOfRange`.
 pub fn UtmCoord::to_mgrs(
   self : UtmCoord,
   lat : Double,
@@ -136,13 +140,19 @@ pub fn to_mgrs(
 ///|
 /// A decoded MGRS reference.
 pub(all) struct MgrsPoint {
+  /// UTM zone 1..=60, or 0 for UPS.
   zone : Int
+  /// Northern hemisphere (UTM) or north polar (UPS).
   north : Bool
+  /// Easting of the returned corner or centre (m).
   easting : Double
+  /// Northing of the returned corner or centre (m).
   northing : Double
   /// Digits per coordinate in the input (0..=11).
   precision : Int
+  /// Latitude of that corner or centre (degrees).
   lat : Double
+  /// Longitude of that corner or centre (degrees).
   lon : Double
 } derive(Debug)
 
@@ -150,9 +160,12 @@ pub(all) struct MgrsPoint {
 pub extend MgrsPoint with @debug.Debug::{to_repr}
 
 ///|
-/// Decode an MGRS string (spaces allowed, case-insensitive). By default the
-/// centre of the referenced grid square is returned; with `centered=false`
-/// its south-west corner.
+/// Decode an MGRS string. Spaces and tabs are ignored. Case is ignored.
+/// By default the centre of the grid square is returned.
+/// `centered=false` returns its south-west corner.
+/// A bad zone, an odd digit count, more than 22 digits, or a letter that
+/// is not in the band or 100 km square raises `UtmError`.
+/// Letters I and O are never valid.
 pub fn from_mgrs(
   input : String,
   centered? : Bool = true,

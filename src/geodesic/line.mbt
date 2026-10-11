@@ -133,20 +133,27 @@ fn GeodesicLine::make(
 ///|
 /// Result of a direct problem / a position on a geodesic line.
 pub(all) struct DirectResult {
+  /// Latitude of point 1 (degrees).
   lat1 : Double
+  /// Longitude of point 1 (degrees).
   lon1 : Double
+  /// Azimuth at point 1 (degrees clockwise from north).
   azi1 : Double
+  /// Latitude of point 2 (degrees). NaN when point 1 was outside [-90, 90].
   lat2 : Double
+  /// Longitude of point 2 (degrees).
   lon2 : Double
-  /// Forward azimuth at point 2 (@geomath.degrees).
+  /// Forward azimuth at point 2 (degrees clockwise from north).
   azi2 : Double
-  /// Distance (m).
+  /// Distance from point 1 to point 2 (m).
   s12 : Double
-  /// Arc length on the auxiliary sphere (@geomath.degrees).
+  /// Arc length on the auxiliary sphere (degrees).
   a12 : Double
   /// Reduced length (m).
   m12 : Double
+  /// Geodesic scale M12 (dimensionless).
   scale12 : Double
+  /// Geodesic scale M21 (dimensionless).
   scale21 : Double
   /// Area between the geodesic and the equator (m²).
   area12 : Double
@@ -309,6 +316,7 @@ fn GeodesicLine::gen_position(
 
 ///|
 /// Position at distance `s12` metres from point 1.
+/// See `Geodesic::inverse` for units, poles, and `long_unroll`.
 pub fn GeodesicLine::position(
   self : GeodesicLine,
   s12 : Double,
@@ -340,12 +348,15 @@ pub fn GeodesicLine::arc(self : GeodesicLine) -> Double {
 }
 
 ///|
+/// Set reference point 3 to distance `s13` metres from point 1.
+/// `distance` and `densify` use this point.
 pub fn GeodesicLine::set_distance(self : GeodesicLine, s13 : Double) -> Unit {
   self.s13 = s13
   self.a13 = self.gen_position(false, s13, false).a12
 }
 
 ///|
+/// Set reference point 3 to arc length `a13` degrees from point 1.
 pub fn GeodesicLine::set_arc(self : GeodesicLine, a13 : Double) -> Unit {
   self.a13 = a13
   self.s13 = self.gen_position(true, a13, false).s12
@@ -353,7 +364,10 @@ pub fn GeodesicLine::set_arc(self : GeodesicLine, a13 : Double) -> Unit {
 
 ///|
 /// Points spaced at most `max_step` metres apart along the line from
-/// point 1 to point 3 (inclusive), e.g. for drawing a geodesic on a map.
+/// point 1 to point 3 (inclusive), for example to draw a route.
+/// Each point is `(lat, lon)` in degrees.
+/// Point 3 must already be set (`inverse_line`, `direct_line`,
+/// `set_distance`, or `set_arc`). Otherwise the distance is NaN.
 pub fn GeodesicLine::densify(
   self : GeodesicLine,
   max_step : Double,
@@ -369,7 +383,8 @@ pub fn GeodesicLine::densify(
 }
 
 ///|
-/// A geodesic line starting at (lat1, lon1) with azimuth azi1.
+/// A geodesic line starting at `(lat1, lon1)` with azimuth `azi1` (degrees).
+/// `distance()` is NaN until `set_distance`, `set_arc`, or `direct_line`.
 pub fn Geodesic::line(
   self : Geodesic,
   lat1 : Double,
@@ -413,7 +428,8 @@ pub fn Geodesic::direct_line(
 
 ///|
 /// Solve the direct geodesic problem: travel `s12` metres from (lat1, lon1)
-/// with initial azimuth `azi1` (@geomath.degrees clockwise from north).
+/// with initial azimuth `azi1` (degrees, clockwise from north).
+/// See `inverse` for poles, NaN latitudes, and `long_unroll`.
 pub fn Geodesic::direct(
   self : Geodesic,
   lat1 : Double,
