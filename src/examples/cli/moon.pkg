@@ -1,0 +1,8 @@
+import {
+  "ChrisTu117/moongeodesy/cn",
+  "ChrisTu117/moongeodesy/geodesic",
+  "moonbitlang/core/env",
+  "moonbitlang/core/string",
+}
+
+pkgtype(kind: "executable")
