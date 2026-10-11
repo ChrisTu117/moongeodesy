@@ -70,10 +70,23 @@ A runnable tour lives in [`src/examples/demo`](src/examples/demo/main.mbt):
 moon run src/examples/demo
 ```
 
+A second example is a small command-line interface in [`src/examples/cli`](src/examples/cli/main.mbt). `geod` solves the WGS-84 inverse and direct problems. `coord` converts one point among WGS-84, GCJ-02, and BD-09 (`gcj2wgs`, `bd2gcj`, and `bd2wgs` are the exact inverses).
+
+```bash
+moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
+moon run src/examples/cli -- geod direct 22.5431 114.0579 90 1000000
+moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
+moon run src/examples/cli -- coord gcj2wgs 39.91010 116.40374
+moon run src/examples/cli -- coord wgs2bd 39.9087 116.3975
+moon run src/examples/cli -- coord bd2wgs 39.91645 116.41012
+```
+
+`coord` also accepts `gcj2bd` and `bd2gcj`. Run `moon run src/examples/cli` to print the full command list.
+
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
-data sets (`moon test --target all`, 28 tests on 4 backends):
+data sets (`moon test --target all`, 36 tests on 4 backends):
 
 | Area | Reference | Result |
 | --- | --- | --- |
@@ -130,3 +143,12 @@ let mgrs = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
 ```
 
 所有结果均与独立参考实现（GeographicLib Python、PROJ、GeoTrans、coord-convert）及 Karney 官方测试数据交叉验证；参考数据生成脚本见 `tools/`。
+
+命令行示例在 `src/examples/cli`：
+
+```bash
+moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
+moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
+```
+
+`geod inverse` 求 WGS-84 最短距离与方位角，`geod direct` 做正算。`coord` 支持 `wgs2gcj`、`gcj2wgs`、`gcj2bd`、`bd2gcj`、`wgs2bd`、`bd2wgs`。无参数时打印命令列表。

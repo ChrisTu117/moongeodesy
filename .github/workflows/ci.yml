@@ -43,5 +43,20 @@ jobs:
       - name: Run demo
         run: moon run src/examples/demo
 
+      - name: Run CLI example
+        run: |
+          moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
+          moon run src/examples/cli -- geod direct 22.5431 114.0579 90 1000000
+          moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
+          moon run src/examples/cli -- coord gcj2wgs 39.91010 116.40374
+          moon run src/examples/cli -- coord gcj2bd 39.91010 116.40374
+          moon run src/examples/cli -- coord bd2gcj 39.91645 116.41012
+          moon run src/examples/cli -- coord wgs2bd 39.9087 116.3975
+          moon run src/examples/cli -- coord bd2wgs 39.91645 116.41012
+          if moon run src/examples/cli -- nope; then
+            echo "unknown command should fail"
+            exit 1
+          fi
+
       - name: Package
         run: moon package --list

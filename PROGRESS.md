@@ -1,9 +1,9 @@
 # moongeodesy progress
 
-Updated: 2026-10-09 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.14.
+Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.14.
 
 ## Status: all three priorities implemented and tested
-`moon test --target all` → 28 tests pass on wasm, wasm-gc, js and native;
+`moon test --target all` → 36 tests pass on wasm, wasm-gc, js and native;
 `moon check --deny-warn`, `moon fmt --check` and `moon package --list` are clean.
 
 ### 1. `cn` — WGS-84 / GCJ-02 / BD-09 ✅
@@ -24,13 +24,13 @@ Updated: 2026-10-09 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.
 - MGRS encode/decode (UTM + polar UPS grids, precision 0–11): 315/315 strings identical to NGA GeoTrans
 
 ### Repo hygiene
-- README.md (English + 中文), MIT LICENSE, `src/examples/demo` (run: `moon run src/examples/demo`), README snippets compiled as tests
+- README.md (English + 中文), MIT LICENSE, `src/examples/demo` (run: `moon run src/examples/demo`), `src/examples/cli` (run: `moon run src/examples/cli -- geod inverse …`), README snippets compiled as tests
 - `.github/workflows/ci.yml`: check (deny-warn), fmt, mbti diff, tests on all backends, demo, package (Linux + macOS)
 - `tools/*.py` regenerate every reference vector (needs `pip install geographiclib pyproj mgrs coord-convert`)
 - module metadata in `moon.mod` (the current toolchain deprecates `moon.mod.json` and migrates it to `moon.mod`)
 
 ## Left / ideas for further commits
-- [ ] CLI (`geod inverse …`, `coord wgs2gcj …`) as a second example
+- [x] CLI (`geod inverse …`, `coord wgs2gcj …`) as a second example (`moon run src/examples/cli`)
 - [ ] rhumb lines; geodesic intersections; `GeodesicExact` for |f| > 0.02
 - [ ] optional finer China boundary polygon for `out_of_china` (currently the usual bounding box)
 - [ ] benchmarks (`moon bench`)
