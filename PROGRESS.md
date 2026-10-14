@@ -34,7 +34,8 @@ Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.
 - [x] CLI (`geod inverse …`, `coord wgs2gcj …`) as a second example (`moon run src/examples/cli`)
 - [ ] rhumb lines; geodesic intersections; `GeodesicExact` for |f| > 0.02
 - [ ] optional finer China boundary polygon for `out_of_china` (currently the usual bounding box)
-- [ ] benchmarks (`moon bench`)
+- [x] benchmarks (`moon bench`, `src/benchmarks`, #8)
+- [x] polygon area scenario `src/examples/s4_polygon_area` (#10)
 - [x] docs: package `README.mbt.md` for `geodesic`, `utm`, and `cn` (checked examples), plus `///` notes for `moon doc` / mooncakes. Preview: `moon doc --serve`
 
 ## Needs the user (not done by the agent)

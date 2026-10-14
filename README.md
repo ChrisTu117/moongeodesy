@@ -198,7 +198,7 @@ all code is new in this period. In order: project scaffold and `cn`
 conversions → GeographicLib math helpers → geodesic inverse/direct/lines/
 polygons → transverse Mercator, UTM/UPS, MGRS → GRS80/CGCS2000 ellipsoids →
 CLI example (#1) → API docs (#2) → runnable scenarios (#3, #5) → this README
-(#4). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
+(#4, #6) → benchmarks (#8) → polygon area scenario (#10). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
 and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
 
 ## AI assistance
