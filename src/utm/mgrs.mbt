@@ -26,22 +26,22 @@ let upsrows : Array[String] = ["ABCDEFGHJKLMNPQRSTUVWXYZ", "ABCDEFGHJKLMNP"]
 
 ///|
 /// Minimum UPS easting (in 100 km units) for bands A, B, Y, Z.
-let ups_mineasting : Array[Int] = [8, 20, 13, 20]
+let ups_mineasting : Array[Int32] = [8, 20, 13, 20]
 
 ///|
 /// Minimum UPS northing (in 100 km units), south and north.
-let ups_minnorthing : Array[Int] = [8, 13]
+let ups_minnorthing : Array[Int32] = [8, 13]
 
 ///|
-let max_precision : Int = 11
+let max_precision : Int32 = 11
 
 ///|
-fn char_at(s : String, i : Int) -> Char {
+fn char_at(s : String, i : Int32) -> Char {
   s.to_array()[i]
 }
 
 ///|
-fn index_of(s : String, c : Char) -> Int {
+fn index_of(s : String, c : Char) -> Int32 {
   for i, ch in s.to_array() {
     if ch == c {
       return i
@@ -51,7 +51,7 @@ fn index_of(s : String, c : Char) -> Int {
 }
 
 ///|
-fn pow10(n : Int) -> Int64 {
+fn pow10(n : Int32) -> Int64 {
   let mut r = 1L
   for _ in 0..<n {
     r = r * 10L
@@ -60,7 +60,7 @@ fn pow10(n : Int) -> Int64 {
 }
 
 ///|
-fn pad_digits(v : Int64, width : Int) -> String {
+fn pad_digits(v : Int64, width : Int32) -> String {
   let s = v.to_string()
   let buf = StringBuilder()
   for _ in 0..<(width - s.length()) {
@@ -81,7 +81,7 @@ fn pad_digits(v : Int64, width : Int) -> String {
 pub fn UtmCoord::to_mgrs(
   self : UtmCoord,
   lat : Double,
-  precision? : Int = 5,
+  precision~ : Int32 = 5,
 ) -> String raise UtmError {
   if precision < 0 || precision > max_precision {
     raise OutOfRange("MGRS precision must be in 0..=11")
@@ -132,7 +132,7 @@ pub fn UtmCoord::to_mgrs(
 pub fn to_mgrs(
   lat : Double,
   lon : Double,
-  precision? : Int = 5,
+  precision~ : Int32 = 5,
 ) -> String raise UtmError {
   from_latlon(lat, lon).to_mgrs(lat, precision~)
 }
@@ -141,7 +141,7 @@ pub fn to_mgrs(
 /// A decoded MGRS reference.
 pub(all) struct MgrsPoint {
   /// UTM zone 1..=60, or 0 for UPS.
-  zone : Int
+  zone : Int32
   /// Northern hemisphere (UTM) or north polar (UPS).
   north : Bool
   /// Easting of the returned corner or centre (m).
@@ -149,7 +149,7 @@ pub(all) struct MgrsPoint {
   /// Northing of the returned corner or centre (m).
   northing : Double
   /// Digits per coordinate in the input (0..=11).
-  precision : Int
+  precision : Int32
   /// Latitude of that corner or centre (degrees).
   lat : Double
   /// Longitude of that corner or centre (degrees).
@@ -168,7 +168,7 @@ pub extend MgrsPoint with @debug.Debug::{to_repr}
 /// Letters I and O are never valid.
 pub fn from_mgrs(
   input : String,
-  centered? : Bool = true,
+  centered~ : Bool = true,
 ) -> MgrsPoint raise UtmError {
   let chars : Array[Char] = []
   for c in input.to_array() {

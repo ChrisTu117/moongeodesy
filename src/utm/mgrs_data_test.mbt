@@ -2,7 +2,7 @@
 
 ///|
 /// (lat, lon, precision, mgrs)
-let mgrs_cases : Array[(Double, Double, Int, String)] = [
+let mgrs_cases : Array[(Double, Double, Int32, String)] = [
   (39.9087, 116.3975, 0, "50SMK"),
   (22.5431, 114.0579, 5, "50QJK9738995922"),
   (31.2304, 121.4737, 5, "51RUQ5463356140"),

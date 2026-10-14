@@ -101,7 +101,12 @@ pub fn sum2(u : Double, v : Double) -> (Double, Double) {
 
 ///|
 /// Evaluate polynomial of degree n with coefficients p[s..s+n] by Horner.
-pub fn polyval(n : Int, p : FixedArray[Double], s : Int, x : Double) -> Double {
+pub fn polyval(
+  n : Int32,
+  p : FixedArray[Double],
+  s : Int32,
+  x : Double,
+) -> Double {
   if n < 0 {
     return 0.0
   }
@@ -159,7 +164,7 @@ pub fn ang_diff(x : Double, y : Double) -> (Double, Double) {
 }
 
 ///|
-fn quadrant(s : Double, c : Double, q : Int) -> (Double, Double) {
+fn quadrant(s : Double, c : Double, q : Int32) -> (Double, Double) {
   match (q % 4 + 4) % 4 {
     1 => (c, -s)
     2 => (-s, -c)
@@ -245,7 +250,7 @@ pub fn fmin(a : Double, b : Double) -> Double {
 }
 
 ///|
-pub fn imin(a : Int, b : Int) -> Int {
+pub fn imin(a : Int32, b : Int32) -> Int32 {
   if b < a {
     b
   } else {

@@ -96,17 +96,17 @@ let polygon_cases : Array[
 ]
 
 ///|
-let edge_case : (Int, Double, Double) = (
+let edge_case : (Int32, Double, Double) = (
   4, 1494037.2456721985, 130323819754.28088,
 )
 
 ///|
-let test_point_case : (Int, Double, Double) = (
+let test_point_case : (Int32, Double, Double) = (
   5, 1537429.9774911525, 141829545746.54428,
 )
 
 ///|
-let test_edge_case : (Int, Double, Double) = (
+let test_edge_case : (Int32, Double, Double) = (
   5, 1494173.6296552024, 130947624688.88438,
 )
 
