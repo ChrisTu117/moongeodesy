@@ -147,6 +147,25 @@ GeodTest-short.dat, errors in nanometres):
 - The transverse Mercator series is accurate to a few nanometres within
   ~3900 km of the central meridian.
 
+## Benchmarks
+
+`moon bench -p ChrisTu117/moongeodesy/benchmarks --target native` (source:
+[`src/benchmarks`](src/benchmarks/bench_test.mbt)). Mean time per call on one
+x86-64 Linux core, moon 0.1.20260920; your numbers will differ.
+
+| Operation | native | js |
+| --- | ---: | ---: |
+| geodesic inverse, Beijing → Shanghai | 3.0 µs | 3.6 µs |
+| geodesic inverse, nearly antipodal | 3.0 µs | 3.0 µs |
+| geodesic direct, 1 000 km | 0.66 µs | 2.3 µs |
+| polygon area, 4 vertices | 4.6 µs | 7.8 µs |
+| WGS-84 → GCJ-02 | 0.14 µs | 0.13 µs |
+| GCJ-02 → WGS-84 (exact, iterative) | 0.80 µs | 0.62 µs |
+| UTM from lat/lon | 0.86 µs | 0.83 µs |
+| MGRS encode (1 m) | 1.5 µs | 2.3 µs |
+
+So one core handles roughly 300 000 geodesic distances per second.
+
 ## Port source and license
 
 - `geodesic` and `utm` are ports of the algorithms in

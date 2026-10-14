@@ -63,5 +63,8 @@ jobs:
             exit 1
           fi
 
+      - name: Benchmarks (smoke run)
+        run: moon bench -p ChrisTu117/moongeodesy/benchmarks --target native
+
       - name: Package
         run: moon package --list
