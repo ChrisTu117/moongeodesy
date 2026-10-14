@@ -110,7 +110,7 @@ moon doc --serve
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
-data sets (`moon test --target all`, 36 tests on 4 backends):
+data sets (`moon test --target all`, 45 tests on 4 backends):
 
 | Area | Reference | Result |
 | --- | --- | --- |
