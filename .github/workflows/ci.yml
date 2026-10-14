@@ -41,7 +41,11 @@ jobs:
         run: moon test --target all
 
       - name: Run demo
-        run: moon run src/examples/demo
+        run: |
+          moon run src/examples/demo
+          moon run src/examples/s1_cn_distance
+          moon run src/examples/s2_utm_mgrs
+          moon run src/examples/s3_accuracy
 
       - name: Run CLI example
         run: |

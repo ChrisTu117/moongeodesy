@@ -1,0 +1,5 @@
+import {
+  "ChrisTu117/moongeodesy/geodesic",
+}
+
+pkgtype(kind: "executable")
