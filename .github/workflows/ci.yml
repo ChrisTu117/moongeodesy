@@ -46,6 +46,7 @@ jobs:
           moon run src/examples/s1_cn_distance
           moon run src/examples/s2_utm_mgrs
           moon run src/examples/s3_accuracy
+          moon run src/examples/s4_polygon_area
 
       - name: Run CLI example
         run: |
