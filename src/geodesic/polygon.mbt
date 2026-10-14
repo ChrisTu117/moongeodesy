@@ -47,7 +47,7 @@ fn Accumulator::remainder(self : Accumulator, y : Double) -> Unit {
 /// Result of a polygon computation.
 pub(all) struct PolygonResult {
   /// Number of vertices.
-  num : Int
+  num : Int32
   /// Perimeter (m); for a polyline, its length.
   perimeter : Double
   /// Area (m²), NaN for a polyline. Counter-clockwise traversal gives a
@@ -66,10 +66,10 @@ pub struct PolygonArea {
   area0 : Double
   areasum : Accumulator
   perimetersum : Accumulator
-  mut num : Int
+  mut num : Int32
   mut lat1 : Double
   mut lon1 : Double
-  mut crossings : Int
+  mut crossings : Int32
   mut lat0 : Double
   mut lon0 : Double
 }
@@ -78,7 +78,7 @@ pub struct PolygonArea {
 /// Start a new polygon (or polyline when `polyline=true`).
 pub fn Geodesic::polygon(
   self : Geodesic,
-  polyline? : Bool = false,
+  polyline~ : Bool = false,
 ) -> PolygonArea {
   let nan = @double.not_a_number
   {
@@ -97,7 +97,7 @@ pub fn Geodesic::polygon(
 }
 
 ///|
-fn transit(lon1_in : Double, lon2_in : Double) -> Int {
+fn transit(lon1_in : Double, lon2_in : Double) -> Int32 {
   let (lon12, _) = @geomath.ang_diff(lon1_in, lon2_in)
   let lon1 = @geomath.ang_normalize(lon1_in)
   let lon2 = @geomath.ang_normalize(lon2_in)
@@ -111,7 +111,7 @@ fn transit(lon1_in : Double, lon2_in : Double) -> Int {
 }
 
 ///|
-fn transitdirect(lon1_in : Double, lon2_in : Double) -> Int {
+fn transitdirect(lon1_in : Double, lon2_in : Double) -> Int32 {
   let lon1 = @geomath.remainder(lon1_in, 720.0)
   let lon2 = @geomath.remainder(lon2_in, 720.0)
   (if lon2 >= 0.0 && lon2 < 360.0 { 0 } else { 1 }) -
@@ -122,7 +122,7 @@ fn transitdirect(lon1_in : Double, lon2_in : Double) -> Int {
 fn areareduce_a(
   area : Accumulator,
   area0 : Double,
-  crossings : Int,
+  crossings : Int32,
   reverse : Bool,
   sign : Bool,
 ) -> Double {
@@ -151,7 +151,7 @@ fn areareduce_a(
 fn areareduce_b(
   area_in : Double,
   area0 : Double,
-  crossings : Int,
+  crossings : Int32,
   reverse : Bool,
   sign : Bool,
 ) -> Double {
@@ -247,8 +247,8 @@ pub fn PolygonArea::add_edge(
 /// is included in the area. Fewer than two vertices gives perimeter 0.
 pub fn PolygonArea::compute(
   self : PolygonArea,
-  reverse? : Bool = false,
-  sign? : Bool = true,
+  reverse~ : Bool = false,
+  sign~ : Bool = true,
 ) -> PolygonResult {
   if self.num < 2 {
     return {
@@ -283,8 +283,8 @@ pub fn PolygonArea::test_point(
   self : PolygonArea,
   lat : Double,
   lon : Double,
-  reverse? : Bool = false,
-  sign? : Bool = true,
+  reverse~ : Bool = false,
+  sign~ : Bool = true,
 ) -> PolygonResult {
   if self.num == 0 {
     return {
@@ -328,8 +328,8 @@ pub fn PolygonArea::test_edge(
   self : PolygonArea,
   azi : Double,
   s : Double,
-  reverse? : Bool = false,
-  sign? : Bool = true,
+  reverse~ : Bool = false,
+  sign~ : Bool = true,
 ) -> PolygonResult {
   let nan = @double.not_a_number
   if self.num == 0 {

@@ -5,19 +5,19 @@
 // This is a close transcription of the Python implementation (geographiclib 2.x).
 
 ///|
-let order : Int = 6
+let order : Int32 = 6
 
 ///|
-let n_c3x : Int = 15 // order * (order - 1) / 2
+let n_c3x : Int32 = 15 // order * (order - 1) / 2
 
 ///|
-let n_c4x : Int = 21 // order * (order + 1) / 2
+let n_c4x : Int32 = 21 // order * (order + 1) / 2
 
 ///|
-let maxit1 : Int = 20
+let maxit1 : Int32 = 20
 
 ///|
-let maxit2 : Int = 83 // maxit1 + 53 + 10
+let maxit2 : Int32 = 83 // maxit1 + 53 + 10
 
 ///|
 let tiny : Double = @geomath.dbl_min.sqrt()
@@ -40,19 +40,19 @@ let xthresh : Double = 1000.0 * @geomath.dbl_epsilon.sqrt()
 // Output masks (subset of GeodesicCapability used internally).
 
 ///|
-let m_distance : Int = 1 << 10
+let m_distance : Int32 = 1 << 10
 
 ///|
-let m_reducedlength : Int = 1 << 12
+let m_reducedlength : Int32 = 1 << 12
 
 ///|
-let m_geodesicscale : Int = 1 << 13
+let m_geodesicscale : Int32 = 1 << 13
 
 ///|
-let m_area : Int = 1 << 14
+let m_area : Int32 = 1 << 14
 
 ///|
-let m_all : Int = m_distance | m_reducedlength | m_geodesicscale | m_area
+let m_all : Int32 = m_distance | m_reducedlength | m_geodesicscale | m_area
 
 ///|
 /// Error raised for an invalid ellipsoid.
@@ -435,7 +435,7 @@ fn Geodesic::lengths(
   dn2 : Double,
   cbet1 : Double,
   cbet2 : Double,
-  outmask : Int,
+  outmask : Int32,
   c1a : FixedArray[Double],
   c2a : FixedArray[Double],
 ) -> (Double, Double, Double, Double, Double) {
@@ -1099,7 +1099,7 @@ pub fn Geodesic::inverse(
   lon1 : Double,
   lat2 : Double,
   lon2 : Double,
-  long_unroll? : Bool = false,
+  long_unroll~ : Bool = false,
 ) -> InverseResult {
   let r = self.gen_inverse(lat1, lon1, lat2, lon2)
   let lon2o = if long_unroll {

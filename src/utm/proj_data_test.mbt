@@ -1207,7 +1207,7 @@ let tm_cases : Array[(Double, Double, Double, Double, Double, Double, Double)] =
 
 ///|
 /// (lat, lon, zone, north(1/0), easting, northing)
-let utm_cases : Array[(Double, Double, Int, Double, Double, Double)] = [
+let utm_cases : Array[(Double, Double, Int32, Double, Double, Double)] = [
   (
     -40.64986538933076, -48.3449991284964, 22, 0.0, 724479.3761710144, 5496720.578443865,
   ),

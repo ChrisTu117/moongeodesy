@@ -6,7 +6,7 @@ pub suberror UtmError {
   /// Latitude outside [-90, 90] or not finite.
   InvalidLatitude(Double)
   /// Zone outside 0..=60 (0 denotes UPS) or inconsistent with the latitude.
-  InvalidZone(Int)
+  InvalidZone(Int32)
   /// Easting/northing outside the allowed range for the zone.
   OutOfRange(String)
   /// Malformed MGRS string.
@@ -20,7 +20,7 @@ pub extend UtmError with @debug.Debug::{to_repr}
 /// A UTM or UPS coordinate. `zone` is 1..=60 for UTM and 0 for UPS.
 pub(all) struct UtmCoord {
   /// UTM zone 1..=60, or 0 for UPS.
-  zone : Int
+  zone : Int32
   /// Northern hemisphere (UTM) or north polar (UPS).
   north : Bool
   /// Easting (m), including the false easting.
@@ -47,7 +47,7 @@ let ups_false_en : Double = 2000000.0
 
 ///|
 /// Latitude band index in [-10, 9] (band C is -10, X is 9).
-fn latitude_band(lat : Double) -> Int {
+fn latitude_band(lat : Double) -> Int32 {
   let ilat = lat.floor().to_int()
   let b = if ilat >= 0 { ilat / 8 } else { -((-ilat + 7) / 8) }
   if b < -10 {
@@ -62,7 +62,7 @@ fn latitude_band(lat : Double) -> Int {
 ///|
 /// The standard UTM zone for (lat, lon), including the Norway and Svalbard
 /// exceptions; returns 0 (UPS) for lat >= 84 or lat < -80.
-pub fn standard_zone(lat : Double, lon : Double) -> Int {
+pub fn standard_zone(lat : Double, lon : Double) -> Int32 {
   if lat >= 84.0 || lat < -80.0 {
     return 0
   }
@@ -82,7 +82,7 @@ pub fn standard_zone(lat : Double, lon : Double) -> Int {
 
 ///|
 /// Central meridian of a UTM zone (degrees).
-pub fn central_meridian(zone : Int) -> Double {
+pub fn central_meridian(zone : Int32) -> Double {
   (6 * zone - 183).to_double()
 }
 
@@ -100,7 +100,7 @@ pub fn central_meridian(zone : Int) -> Double {
 pub fn from_latlon(
   lat : Double,
   lon : Double,
-  zone? : Int,
+  zone? : Int32,
 ) -> UtmCoord raise UtmError {
   if !(lat.abs() <= 90.0) {
     raise InvalidLatitude(lat)
@@ -143,7 +143,7 @@ pub fn from_latlon(
 /// >= 1e8 m, raises `OutOfRange`.
 /// Longitude ±180 falls in UTM zone 1.
 pub fn to_latlon(
-  zone : Int,
+  zone : Int32,
   north : Bool,
   easting : Double,
   northing : Double,

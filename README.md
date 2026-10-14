@@ -83,6 +83,16 @@ moon run src/examples/cli -- coord bd2wgs 39.91645 116.41012
 
 `coord` also accepts `gcj2bd` and `bd2gcj`. Run `moon run src/examples/cli` to print the full command list.
 
+## Scenarios
+
+Three end-to-end scenarios, each runnable on every backend and run in CI:
+
+| Scenario | Run | What it shows |
+| --- | --- | --- |
+| [Map APIs → true distance](src/examples/s1_cn_distance/main.mbt) | `moon run src/examples/s1_cn_distance` | a Gaode (GCJ-02) shop and a Baidu (BD-09) customer converted to WGS-84, then the geodesic distance; mixing raw coordinates is off by ~764 m |
+| [UTM ↔ MGRS field survey](src/examples/s2_utm_mgrs/main.mbt) | `moon run src/examples/s2_utm_mgrs` | UTM/UPS and MGRS for Beijing, Sydney, the Norway 32V and Svalbard 33X exceptions and the South Pole, with round-trip residuals |
+| [Accuracy vs GeographicLib](src/examples/s3_accuracy/main.mbt) | `moon run src/examples/s3_accuracy` | 200 cases of the official GeodTest set, max inverse/direct errors per distance band (table below) |
+
 ## API reference
 
 Signatures, units, and edge cases are in the package notes. `moon check` and `moon test` run the short example in each section.

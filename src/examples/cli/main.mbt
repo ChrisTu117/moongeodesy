@@ -12,15 +12,15 @@ fn main {
 
 ///|
 #cfg(target="wasm")
-fn exit_with(code : Int) -> Unit = "wasi_snapshot_preview1" "proc_exit"
+fn exit_with(code : Int32) -> Unit = "wasi_snapshot_preview1" "proc_exit"
 
 ///|
 #cfg(target="wasm-gc")
-fn exit_with(code : Int) -> Unit = "__moonbit_sys_unstable" "exit"
+fn exit_with(code : Int32) -> Unit = "__moonbit_sys_unstable" "exit"
 
 ///|
 #cfg(target="js")
-extern "js" fn exit_with(code : Int) -> Unit =
+extern "js" fn exit_with(code : Int32) -> Unit =
   #| function(code) {
   #|   if (typeof process !== "undefined" && typeof process.exit === "function") {
   #|     process.exit(code);
@@ -29,4 +29,4 @@ extern "js" fn exit_with(code : Int) -> Unit =
 
 ///|
 #cfg(any(target="native", target="llvm"))
-extern "c" fn exit_with(code : Int) = "exit"
+extern "c" fn exit_with(code : Int32) = "exit"

@@ -320,7 +320,7 @@ fn GeodesicLine::gen_position(
 pub fn GeodesicLine::position(
   self : GeodesicLine,
   s12 : Double,
-  long_unroll? : Bool = false,
+  long_unroll~ : Bool = false,
 ) -> DirectResult {
   self.gen_position(false, s12, long_unroll)
 }
@@ -330,7 +330,7 @@ pub fn GeodesicLine::position(
 pub fn GeodesicLine::arc_position(
   self : GeodesicLine,
   a12 : Double,
-  long_unroll? : Bool = false,
+  long_unroll~ : Bool = false,
 ) -> DirectResult {
   self.gen_position(true, a12, long_unroll)
 }
@@ -436,7 +436,7 @@ pub fn Geodesic::direct(
   lon1 : Double,
   azi1 : Double,
   s12 : Double,
-  long_unroll? : Bool = false,
+  long_unroll~ : Bool = false,
 ) -> DirectResult {
   self.line(lat1, lon1, azi1).gen_position(false, s12, long_unroll)
 }
@@ -449,7 +449,7 @@ pub fn Geodesic::arc_direct(
   lon1 : Double,
   azi1 : Double,
   a12 : Double,
-  long_unroll? : Bool = false,
+  long_unroll~ : Bool = false,
 ) -> DirectResult {
   self.line(lat1, lon1, azi1).gen_position(true, a12, long_unroll)
 }
