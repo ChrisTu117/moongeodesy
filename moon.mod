@@ -16,9 +16,10 @@ keywords = [
   "bd09",
   "utm",
   "mgrs",
+  "rhumb",
   "geographiclib",
 ]
 
-description = "Pure MoonBit geodesy: Karney geodesics (GeographicLib port), UTM/UPS/MGRS, and WGS-84/GCJ-02/BD-09 conversions"
+description = "Pure MoonBit geodesy: Karney geodesics and rhumb lines (GeographicLib port), UTM/UPS/MGRS, and WGS-84/GCJ-02/BD-09 conversions"
 
 source = "src"
