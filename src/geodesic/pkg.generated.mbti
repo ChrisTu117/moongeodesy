@@ -16,8 +16,15 @@ pub suberror GeodesicError {
 } derive(@debug.Debug)
 pub fn GeodesicError::to_repr(Self) -> @debug.Repr
 
+pub suberror RhumbError {
+  InvalidEllipsoid(String)
+} derive(@debug.Debug)
+pub fn RhumbError::to_repr(Self) -> @debug.Repr
+
 // Types and methods
 type Accumulator
+
+type AuxAngle
 
 pub(all) struct DirectResult {
   lat1 : Double
@@ -153,6 +160,65 @@ pub(all) struct PolygonResult {
   area : Double
 } derive(@debug.Debug)
 pub fn PolygonResult::to_repr(Self) -> @debug.Repr
+
+pub struct Rhumb {
+  a : Double
+  f : Double
+  n : Double
+  rm : Double
+  c2 : Double
+  c : FixedArray[Double]
+  p_p : FixedArray[Double]
+}
+pub fn Rhumb::cgcs2000() -> Self
+pub fn Rhumb::direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> RhumbDirectResult
+pub fn Rhumb::distance(Self, Double, Double, Double, Double) -> Double
+pub fn Rhumb::ellipsoid_area(Self) -> Double
+pub fn Rhumb::equatorial_radius(Self) -> Double
+pub fn Rhumb::flattening(Self) -> Double
+pub fn Rhumb::grs80() -> Self
+pub fn Rhumb::inverse(Self, Double, Double, Double, Double) -> RhumbInverseResult
+pub fn Rhumb::line(Self, Double, Double, Double) -> RhumbLine
+pub fn Rhumb::new(Double, Double) -> Self raise RhumbError
+pub fn Rhumb::wgs84() -> Self
+
+pub(all) struct RhumbDirectResult {
+  lat1 : Double
+  lon1 : Double
+  azi12 : Double
+  s12 : Double
+  lat2 : Double
+  lon2 : Double
+  area12 : Double
+} derive(@debug.Debug)
+pub fn RhumbDirectResult::to_repr(Self) -> @debug.Repr
+
+pub(all) struct RhumbInverseResult {
+  lat1 : Double
+  lon1 : Double
+  lat2 : Double
+  lon2 : Double
+  s12 : Double
+  azi12 : Double
+  area12 : Double
+} derive(@debug.Debug)
+pub fn RhumbInverseResult::to_repr(Self) -> @debug.Repr
+
+pub struct RhumbLine {
+  rh : Rhumb
+  lat1 : Double
+  lon1 : Double
+  azi12 : Double
+  salp : Double
+  calp : Double
+  mu1 : Double
+  phi1 : AuxAngle
+  chi1 : AuxAngle
+}
+pub fn RhumbLine::azimuth(Self) -> Double
+pub fn RhumbLine::latitude(Self) -> Double
+pub fn RhumbLine::longitude(Self) -> Double
+pub fn RhumbLine::position(Self, Double, long_unroll? : Bool) -> RhumbDirectResult
 
 // Type aliases
 

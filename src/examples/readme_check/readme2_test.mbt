@@ -7,5 +7,7 @@ test "readme zh" {
   let gcj = @cn.wgs84_to_gcj02(@cn.LatLon::new(39.9087, 116.3975)) // GPS → 高德
   let bd = @cn.gcj02_to_bd09(gcj) // 高德 → 百度
   let mgrs = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
-  ignore((r, bd, mgrs))
+  let rh = @geodesic.Rhumb::wgs84()
+  let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503) // 伦敦 → 东京，恒向线
+  ignore((r, bd, mgrs, h))
 }

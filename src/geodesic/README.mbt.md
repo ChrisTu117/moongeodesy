@@ -188,3 +188,62 @@ test "polygon area" {
   assert_true(line.compute().perimeter > 0.0)
 }
 ```
+
+## Rhumb lines
+
+恒向线（等方位角）。反算、正算、赤道与航线之间的面积。
+
+```moonbit nocheck
+pub fn Rhumb::wgs84() -> Rhumb
+pub fn Rhumb::grs80() -> Rhumb
+pub fn Rhumb::cgcs2000() -> Rhumb
+pub fn Rhumb::new(a : Double, f : Double) -> Rhumb raise RhumbError
+
+pub fn Rhumb::inverse(
+  Self, lat1 : Double, lon1 : Double, lat2 : Double, lon2 : Double,
+) -> RhumbInverseResult
+
+pub fn Rhumb::direct(
+  Self, lat1 : Double, lon1 : Double, azi12 : Double, s12 : Double,
+  long_unroll? : Bool,
+) -> RhumbDirectResult
+
+pub fn Rhumb::distance(
+  Self, lat1 : Double, lon1 : Double, lat2 : Double, lon2 : Double,
+) -> Double
+
+pub fn Rhumb::line(Self, lat1 : Double, lon1 : Double, azi12 : Double) -> RhumbLine
+pub fn RhumbLine::position(Self, s12 : Double, long_unroll? : Bool) -> RhumbDirectResult
+```
+
+`RhumbInverseResult` carries the endpoints, `s12` (m), constant azimuth `azi12` (degrees), and `area12` (m²). `RhumbDirectResult` carries the same quantities for the point reached by travelling `s12` metres at that azimuth.
+
+`area12` is the area between the rhumb line and the equator: the quadrilateral `(lat1, lon1)`, `(0, lon1)`, `(0, lon2)`, `(lat2, lon2)`, counter-clockwise positive.
+
+The shortest rhumb line is returned. It wraps at most halfway around the earth. On opposite meridians the east-going line is chosen.
+
+`distance` returns only `s12`. `line` fixes the azimuth; `position` then takes metres along it. `s12` may be negative.
+
+Longitudes are reduced to [-180, 180]. Set `long_unroll=true` when the path crosses the antimeridian and `lon2` must stay continuous.
+
+Latitude ±90 is a valid pole. A latitude outside [-90, 90] is returned as NaN. No error is raised. If the rhumb line crosses a pole, `lon2` and `area12` are NaN.
+
+The series assume `|f|` up to about 1/150. WGS-84, GRS80, and CGCS2000 are inside that range.
+
+```mbt check
+///|
+test "rhumb line" {
+  let rh = @geodesic.Rhumb::wgs84()
+  let r = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503)
+  let g = @geodesic.Geodesic::wgs84().distance(
+    51.4778, -0.0015, 35.6762, 139.6503,
+  )
+  assert_true(r.s12 > g)
+  assert_true(r.s12 > 1.1e7)
+  let d = rh.direct(0.0, 179.0, 90.0, 500000.0, long_unroll=true)
+  assert_true(d.lon2 > 180.0)
+  let pole = rh.direct(80.0, 10.0, 0.0, 3000000.0)
+  assert_true(pole.lon2.is_nan())
+  assert_true(pole.area12.is_nan())
+}
+```
