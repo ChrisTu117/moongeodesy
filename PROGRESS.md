@@ -1,10 +1,10 @@
 # moongeodesy progress
 
-Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.14.
+Updated: 2026-10-17 (Asia/Shanghai). Toolchain: moon 0.1.20261012 / moonc v0.10.15.
 
 ## Status: all three priorities implemented and tested
-`moon test --target all` → 45 tests pass on wasm, wasm-gc, js, and native
-(9 of them are the API-doc examples).
+`moon test --target all` → 50 tests pass on wasm, wasm-gc, js, and native
+(10 of them are the API-doc examples).
 `moon check --deny-warn`, `moon fmt --check` and `moon package --list` are clean.
 
 ### 1. `cn` — WGS-84 / GCJ-02 / BD-09 ✅
@@ -14,10 +14,12 @@ Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.
 ### 2. `geodesic` — Karney / GeographicLib port ✅
 - `inverse`, `direct`, `arc_direct`, `distance`; `GeodesicLine` (`position`, `arc_position`, `densify`, `inverse_line`, `direct_line`)
 - `PolygonArea` (`add_point`, `add_edge`, `compute`, `test_point`, `test_edge`, polyline mode) + `polygon_area`
+- `Rhumb::inverse` / `direct` / `distance` / `line`, `RhumbLine::position` (`wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`)
 - ellipsoids: `wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`
 - GeodTest-short.dat (CC0), 1000 cases: inverse max Δs12 7.5 nm; direct max position error 8.6 nm
 - vs Python geographiclib 2.1 (2020 cases): relative diff < 1e-11 (an accurate `hypot` was needed to match on very short lines)
 - polygons (pole-enclosing, antimeridian) vs geographiclib: < 1e-14 × Earth area
+- rhumb lines vs GeographicLib RhumbSolve 2.5 (125 inverse + 296 direct cases, poles, antimeridian, due east/west): inverse max Δs12 3.73 nm; direct max position error 10.5 nm; area < 4e-15 × ellipsoid area
 
 ### 3. `utm` — TM / UTM / UPS / MGRS ✅
 - transverse Mercator (Krüger n^6), polar stereographic, UTM/UPS with Norway/Svalbard zones, convergence + scale
@@ -27,18 +29,19 @@ Updated: 2026-10-11 (Asia/Shanghai). Toolchain: moon 0.1.20260920 / moonc v0.10.
 ### Repo hygiene
 - README.md (English + 中文), MIT LICENSE, `src/examples/demo` (run: `moon run src/examples/demo`), `src/examples/cli` (run: `moon run src/examples/cli -- geod inverse …`), README snippets compiled as tests
 - `.github/workflows/ci.yml`: check (deny-warn), fmt, mbti diff, tests on all backends, demo, package (Linux + macOS)
-- `tools/*.py` regenerate every reference vector (needs `pip install geographiclib pyproj mgrs coord-convert`)
+- `tools/*.py` regenerate every reference vector (needs `pip install geographiclib pyproj mgrs coord-convert`; rhumb vectors also need GeographicLib's `RhumbSolve`, from `geographiclib-tools` or a GeographicLib 2.5 source build)
 - module metadata in `moon.mod` (the current toolchain deprecates `moon.mod.json` and migrates it to `moon.mod`)
+- published on mooncakes.io as `ChrisTu117/moongeodesy` 0.1.1
 
 ## Left / ideas for further commits
 - [x] CLI (`geod inverse …`, `coord wgs2gcj …`) as a second example (`moon run src/examples/cli`)
-- [ ] rhumb lines; geodesic intersections; `GeodesicExact` for |f| > 0.02
+- [x] rhumb lines (#15, PR #17). Still open: geodesic intersections; `GeodesicExact` for |f| > 0.02
 - [ ] optional finer China boundary polygon for `out_of_china` (currently the usual bounding box)
 - [x] benchmarks (`moon bench`, `src/benchmarks`, #8)
 - [x] polygon area scenario `src/examples/s4_polygon_area` (#10)
-- [x] docs: package `README.mbt.md` for `geodesic`, `utm`, and `cn` (checked examples), plus `///` notes for `moon doc` / mooncakes. Preview: `moon doc --serve`
+- [x] docs: package `README.mbt.md` for `geodesic` (including rhumb lines), `utm`, and `cn` (checked examples), plus `///` notes for `moon doc` / mooncakes. Preview: `moon doc --serve`
 
-## Needs the user (not done by the agent)
-- create public GitHub repo `ChrisTu117/moongeodesy`, then push (`git remote add origin … && git push -u origin main`)
-- `moon login` (GitHub auth) and `moon publish` — publishing is irreversible, needs approval
-- hackathon registration (Feishu form) and WeChat group (nickname = ChrisTu117)
+## Already done
+- public repo: https://github.com/ChrisTu117/moongeodesy
+- published on mooncakes.io as ChrisTu117/moongeodesy 0.1.1 (do not republish from a docs-only change)
+- hackathon registration passed review
