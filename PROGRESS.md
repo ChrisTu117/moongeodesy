@@ -1,10 +1,10 @@
 # moongeodesy progress
 
-Updated: 2026-10-17 (Asia/Shanghai). Toolchain: moon 0.1.20261012 / moonc v0.10.15.
+Updated: 2026-10-20 (Asia/Shanghai). Toolchain: moon 0.1.20261016 / moonc v0.10.16.
 
 ## Status: all three priorities implemented and tested
-`moon test --target all` → 50 tests pass on wasm, wasm-gc, js, and native
-(10 of them are the API-doc examples).
+`moon test --target all` → 58 tests pass on wasm, wasm-gc, js, and native
+(11 of them are the API-doc examples).
 `moon check --deny-warn`, `moon fmt --check` and `moon package --list` are clean.
 
 ### 1. `cn` — WGS-84 / GCJ-02 / BD-09 ✅
@@ -15,11 +15,13 @@ Updated: 2026-10-17 (Asia/Shanghai). Toolchain: moon 0.1.20261012 / moonc v0.10.
 - `inverse`, `direct`, `arc_direct`, `distance`; `GeodesicLine` (`position`, `arc_position`, `densify`, `inverse_line`, `direct_line`)
 - `PolygonArea` (`add_point`, `add_edge`, `compute`, `test_point`, `test_edge`, polyline mode) + `polygon_area`
 - `Rhumb::inverse` / `direct` / `distance` / `line`, `RhumbLine::position` (`wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`)
+- `Intersect::closest` / `next` / `segment` (`wgs84()`, `new(geodesic)`); `c` is 0 for a crossing, +1 for coincident parallel, −1 for coincident antiparallel; `segmode` is `3*kx+ky`
 - ellipsoids: `wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`
 - GeodTest-short.dat (CC0), 1000 cases: inverse max Δs12 7.5 nm; direct max position error 8.6 nm
 - vs Python geographiclib 2.1 (2020 cases): relative diff < 1e-11 (an accurate `hypot` was needed to match on very short lines)
 - polygons (pole-enclosing, antimeridian) vs geographiclib: < 1e-14 × Earth area
 - rhumb lines vs GeographicLib RhumbSolve 2.5 (125 inverse + 296 direct cases, poles, antimeridian, due east/west): inverse max Δs12 3.73 nm; direct max position error 10.5 nm; area < 4e-15 × ellipsoid area
+- geodesic intersections vs GeographicLib IntersectTool 2.5 (53 closest + 12 offset + 24 next + 50 segment cases on WGS-84, a sphere, a prolate ellipsoid, and GRS80, plus the equatorial coincident cases): max |Δx|, |Δy| 0.45 µm; the curves meet to 8 nm
 
 ### 3. `utm` — TM / UTM / UPS / MGRS ✅
 - transverse Mercator (Krüger n^6), polar stereographic, UTM/UPS with Norway/Svalbard zones, convergence + scale
@@ -29,13 +31,14 @@ Updated: 2026-10-17 (Asia/Shanghai). Toolchain: moon 0.1.20261012 / moonc v0.10.
 ### Repo hygiene
 - README.md (English + 中文), MIT LICENSE, `src/examples/demo` (run: `moon run src/examples/demo`), `src/examples/cli` (run: `moon run src/examples/cli -- geod inverse …`), README snippets compiled as tests
 - `.github/workflows/ci.yml`: check (deny-warn), fmt, mbti diff, tests on all backends, demo, package (Linux + macOS)
-- `tools/*.py` regenerate every reference vector (needs `pip install geographiclib pyproj mgrs coord-convert`; rhumb vectors also need GeographicLib's `RhumbSolve`, from `geographiclib-tools` or a GeographicLib 2.5 source build)
+- `tools/*.py` regenerate every reference vector (needs `pip install geographiclib pyproj mgrs coord-convert`; rhumb vectors also need GeographicLib's `RhumbSolve`, from `geographiclib-tools` or a GeographicLib 2.5 source build; intersection vectors need `IntersectTool` from a GeographicLib 2.5 source build)
 - module metadata in `moon.mod` (the current toolchain deprecates `moon.mod.json` and migrates it to `moon.mod`)
 - published on mooncakes.io as `ChrisTu117/moongeodesy` 0.1.1
 
 ## Left / ideas for further commits
 - [x] CLI (`geod inverse …`, `coord wgs2gcj …`) as a second example (`moon run src/examples/cli`)
-- [x] rhumb lines (#15, PR #17). Still open: geodesic intersections; `GeodesicExact` for |f| > 0.02
+- [x] rhumb lines (#15, PR #17)
+- [x] geodesic intersections (#19, PR #20). Still open: `GeodesicExact` for |f| > 0.02. `All` (every intersection inside a radius) was not ported
 - [ ] optional finer China boundary polygon for `out_of_china` (currently the usual bounding box)
 - [x] benchmarks (`moon bench`, `src/benchmarks`, #8)
 - [x] polygon area scenario `src/examples/s4_polygon_area` (#10)
