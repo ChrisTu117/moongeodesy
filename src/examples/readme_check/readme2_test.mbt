@@ -9,5 +9,7 @@ test "readme zh" {
   let mgrs = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
   let rh = @geodesic.Rhumb::wgs84()
   let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503) // 伦敦 → 东京，恒向线
-  ignore((r, bd, mgrs, h))
+  let ix = @geodesic.Intersect::wgs84()
+  let p = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) // 两条测地线的最近交点
+  ignore((r, bd, mgrs, h, p))
 }

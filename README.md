@@ -13,7 +13,7 @@ conversions needed for maps in mainland China. No FFI; works on the `wasm`,
 
 | Package | What it does |
 | --- | --- |
-| `ChrisTu117/moongeodesy/geodesic` | Karney's geodesic algorithms and rhumb lines: inverse & direct problems, geodesic lines, polygon area/perimeter on any ellipsoid |
+| `ChrisTu117/moongeodesy/geodesic` | Karney's geodesic algorithms, rhumb lines, and geodesic intersections: inverse & direct problems, geodesic lines, polygon area/perimeter on any ellipsoid |
 | `ChrisTu117/moongeodesy/utm` | Transverse Mercator (6th-order Krüger series), polar stereographic, UTM/UPS with standard zones, MGRS encode/decode |
 | `ChrisTu117/moongeodesy/cn` | WGS-84 → GCJ-02 (Gaode/Tencent), GCJ-02 → BD-09 (Baidu), with exact iterative inverses |
 
@@ -55,6 +55,10 @@ let a = g.polygon_area([(0.0, 0.0), (0.0, 1.0), (1.0, 1.0), (1.0, 0.0)])
 // Rhumb line: constant-azimuth distance, London → Tokyo (longer than the geodesic)
 let rh = @geodesic.Rhumb::wgs84()
 let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503) // h.s12, h.azi12, h.area12
+
+// Intersection of two geodesics (signed metres from each start)
+let ix = @geodesic.Intersect::wgs84()
+let cross = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) // cross.x, cross.y, cross.c
 
 // Other ellipsoids: CGCS2000 / GRS80 built in, or any (a, f)
 let cgcs = @geodesic.Geodesic::cgcs2000()
@@ -105,7 +109,7 @@ Four end-to-end scenarios, each runnable on every backend and run in CI:
 
 Signatures, units, and edge cases are in the package notes. `moon check` and `moon test` run the short example in each section.
 
-- [`geodesic`](src/geodesic/README.mbt.md) — ellipsoids, inverse and direct, lines, polygons, rhumb lines
+- [`geodesic`](src/geodesic/README.mbt.md) — ellipsoids, inverse and direct, lines, polygons, rhumb lines, intersections
 - [`utm`](src/utm/README.mbt.md) — transverse Mercator, UTM/UPS, MGRS
 - [`cn`](src/cn/README.mbt.md) — WGS-84, GCJ-02, BD-09
 
@@ -118,7 +122,7 @@ moon doc --serve
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
-data sets (`moon test --target all`, 50 tests on 4 backends):
+data sets (`moon test --target all`, 58 tests on 4 backends):
 
 | Area | Reference | Result |
 | --- | --- | --- |
@@ -129,6 +133,7 @@ data sets (`moon test --target all`, 50 tests on 4 backends):
 | Rhumb inverse | 125 cases vs GeographicLib RhumbSolve 2.5 | max distance error 3.73 nm |
 | Rhumb direct | 296 cases vs the same RhumbSolve | max position error 10.5 nm |
 | Rhumb area | those inverse and direct cases | < 4e-15 of the ellipsoid area |
+| Geodesic intersection | 139 cases (closest, offset, next, segment) vs GeographicLib IntersectTool 2.5 | max \|Δx\|, \|Δy\| 0.45 µm; the curves meet to 8 nm |
 | Transverse Mercator / UTM / UPS | 600 points vs PROJ 9 (pyproj) | max difference 5.5 nm |
 | MGRS | 315 points vs NGA GeoTrans (`mgrs` package) | 315/315 identical strings |
 | GCJ-02 / BD-09 | 200 points vs `coord-convert` | < 1e-11° |
@@ -157,6 +162,9 @@ GeodTest-short.dat, errors in nanometres):
 - A rhumb line that crosses a pole has no single longitude; `lon2` and
   `area12` are NaN in that case. The rhumb series assume `|f|` up to about
   1/150.
+- Two closest geodesic intersections can be the same L1 distance apart.
+  `closest`, `next`, and `segment` then return one of them. `segment`
+  needs one shortest geodesic between each pair of endpoints.
 - The transverse Mercator series is accurate to a few nanometres within
   ~3900 km of the central meridian.
 
@@ -181,13 +189,16 @@ So one core handles roughly 300 000 geodesic distances per second.
 
 ## Port source and license
 
-- `geodesic` (geodesics, polygons, and rhumb lines) and `utm` are ports of
-  the algorithms in
+- `geodesic` (geodesics, polygons, rhumb lines, and intersections) and `utm`
+  are ports of the algorithms in
   [GeographicLib](https://github.com/geographiclib/geographiclib) by Charles
   F. F. Karney (C++ and Python versions, v2.x), released under the
   **MIT/X11 License**, © Charles Karney. Rhumb lines follow GeographicLib's
   `Rhumb` class (order-6 series; Karney 2024,
   [doi:10.1007/s11200-024-0709-z](https://doi.org/10.1007/s11200-024-0709-z)).
+  Intersections follow GeographicLib's `Intersect` class (Karney 2024,
+  [doi:10.1061/JSUED2.SUENG-1483](https://doi.org/10.1061/JSUED2.SUENG-1483);
+  preprint [arXiv:2308.00495](https://arxiv.org/abs/2308.00495)).
   Structure, series coefficients and edge-case handling follow GeographicLib;
   the MoonBit code is a rewrite, not a binding.
 - GCJ-02/BD-09 use the widely published reverse-engineered formulas (as in
@@ -199,13 +210,13 @@ So one core handles roughly 300 000 geodesic distances per second.
 
 | Part | Lines of MoonBit |
 | --- | --- |
-| Core library (`geodesic`, `utm`, `cn`, `internal`) | ~4 300 |
-| Hand-written tests | ~730 |
-| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~18 700 |
+| Core library (`geodesic`, `utm`, `cn`, `internal`) | ~5 000 |
+| Hand-written tests | ~1 150 |
+| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~19 400 |
 | Examples (demo, CLI, four scenarios) | ~1 400 |
 
 The large total is almost entirely generated test vectors; the library itself
-is about 4.3k lines.
+is about 5.0k lines.
 
 ## What is new in this contest period (October 2026)
 
@@ -253,9 +264,10 @@ pair well with it:
 ## Credits
 
 - Geodesic and projection algorithms: C. F. F. Karney, *Algorithms for
-  geodesics*, J. Geodesy 87, 43–55 (2013) and *Transverse Mercator with an
-  accuracy of a few nanometers*, J. Geodesy 85, 475–485 (2011); code structure
-  follows GeographicLib (MIT/X11 License, © Charles Karney).
+  geodesics*, J. Geodesy 87, 43–55 (2013), *Transverse Mercator with an
+  accuracy of a few nanometers*, J. Geodesy 85, 475–485 (2011), and
+  *Geodesic intersections*, J. Surveying Eng. 150(3), 04024005 (2024);
+  code structure follows GeographicLib (MIT/X11 License, © Charles Karney).
 - Test data: GeodTest.dat, Karney (2010), doi:10.5281/zenodo.32156, CC0.
 
 ## License
@@ -268,7 +280,7 @@ MIT
 
 **moongeodesy** 是一个纯 MoonBit 实现的大地测量库，无 FFI，支持 wasm / wasm-gc / js / native 全部后端：
 
-- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长，以及恒向线（等方位角的 rhumb line：反算、正算、航线与赤道之间的面积）。测地线精度为纳米级（官方 GeodTest 测试集上最大误差 < 10 nm）；恒向线与 GeographicLib RhumbSolve 2.5 对照，距离最大误差 3.73 nm。
+- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（等方位角的 rhumb line），以及两条测地线的交点（最近点、下一点、线段）。测地线精度为纳米级（官方 GeodTest 测试集上最大误差 < 10 nm）；恒向线与 GeographicLib RhumbSolve 2.5 对照，距离最大误差 3.73 nm；交点与 IntersectTool 2.5 对照，参数最大误差 0.45 µm。
 - **`utm`**：横轴墨卡托投影（Krüger 6 阶级数）、极球面投影、UTM/UPS 坐标（含挪威、斯瓦尔巴特特殊分带）以及 MGRS 军事格网参考系的编码与解码。与 PROJ 结果相差 < 10 nm，MGRS 字符串与 NGA GeoTrans 完全一致。
 - **`cn`**：国内地图坐标系转换——WGS-84（GPS）↔ GCJ-02（高德、腾讯，"火星坐标"）↔ BD-09（百度），提供迭代精确逆转换（往返误差 < 1e-9°）以及常用的单步近似公式。
 
@@ -280,6 +292,8 @@ let bd = @cn.gcj02_to_bd09(gcj) // 高德 → 百度
 let mgrs = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
 let rh = @geodesic.Rhumb::wgs84()
 let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503) // 伦敦 → 东京，恒向线
+let ix = @geodesic.Intersect::wgs84()
+let p = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) // 两条测地线的最近交点
 ```
 
 所有结果均与独立参考实现（GeographicLib Python、PROJ、GeoTrans、coord-convert）及 Karney 官方测试数据交叉验证；参考数据生成脚本见 `tools/`。
