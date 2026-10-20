@@ -1,6 +1,6 @@
 # geodesic
 
-椭球面测地线：正算、反算、航线插点、多边形面积。
+椭球面测地线：正算、反算、航线插点、多边形面积、测地线交点。
 
 Package `ChrisTu117/moongeodesy/geodesic`. Angles are degrees. Lengths are metres. Areas are square metres. Azimuth is clockwise from north.
 
@@ -245,5 +245,63 @@ test "rhumb line" {
   let pole = rh.direct(80.0, 10.0, 0.0, 3000000.0)
   assert_true(pole.lon2.is_nan())
   assert_true(pole.area12.is_nan())
+}
+```
+
+## Intersections
+
+两条测地线的交点。最近点、下一点、线段。
+
+```moonbit nocheck
+pub fn Intersect::wgs84() -> Intersect
+pub fn Intersect::new(Geodesic) -> Intersect raise IntersectError
+
+pub fn Intersect::closest(
+  Self,
+  lat_x : Double, lon_x : Double, azi_x : Double,
+  lat_y : Double, lon_y : Double, azi_y : Double,
+  x0? : Double, y0? : Double,
+) -> IntersectPoint raise IntersectError
+
+pub fn Intersect::next(
+  Self, lat : Double, lon : Double, azi_x : Double, azi_y : Double,
+) -> IntersectPoint raise IntersectError
+
+pub fn Intersect::segment(
+  Self,
+  lat_x1 : Double, lon_x1 : Double, lat_x2 : Double, lon_x2 : Double,
+  lat_y1 : Double, lon_y1 : Double, lat_y2 : Double, lon_y2 : Double,
+) -> SegmentIntersect raise IntersectError
+
+pub fn Intersect::dist(Double, Double, x0? : Double, y0? : Double) -> Double
+```
+
+`IntersectPoint` is the signed distances `x` and `y` in metres, and `c`. `x` is measured along geodesic X from its start. `y` is measured along geodesic Y. `c` is 0 when the geodesics only cross. `c` is +1 when they lie on top of each other and point the same way. `c` is -1 when they lie on top of each other and point opposite ways.
+
+`closest` takes a point and an azimuth for each geodesic. It minimises `|x - x0| + |y - y0|`. `x0` and `y0` default to 0.
+
+`next` takes one point and two azimuths. The geodesics already meet there. The result is the next closest meeting, not `(0, 0)`.
+
+`segment` takes the endpoints of two shortest segments. `segmode` is 0 when the intersection lies on both segments. Otherwise `segmode` is `3 * kx + ky`. `kx` is -1 when `x < 0`, 0 when `x` is on segment X, and 1 when `x` is past the end of X. `ky` is the same flag for Y.
+
+`dist` is the L1 distance `|x - x0| + |y - y0|`.
+
+`new` raises `IntersectError::TooEccentric` when the ellipsoid is too flat for the search. WGS-84, GRS80, and CGCS2000 are inside the accepted range. The series geodesic is the one used here. It is accurate for `|f|` up to about 1/50.
+
+Two closest intersections can be the same distance apart. `closest`, `next`, and `segment` then return one of them. `segment` needs one shortest geodesic between each pair of endpoints.
+
+```mbt check
+///|
+test "geodesic intersection" {
+  let ix = @geodesic.Intersect::wgs84()
+  let p = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0)
+  let g = @geodesic.Geodesic::wgs84()
+  let x = g.direct(0.0, 0.0, 45.0, p.x)
+  let y = g.direct(45.0, 10.0, 135.0, p.y)
+  assert_true(g.distance(x.lat2, x.lon2, y.lat2, y.lon2) < 1.0e-6)
+  let s = ix.segment(0.0, -1.0, 0.0, 1.0, -1.0, 0.0, 1.0, 0.0)
+  assert_eq(s.segmode, 0)
+  let n = ix.next(0.0, 0.0, 45.0, 135.0)
+  assert_true(n.x.abs() + n.y.abs() > 1.0e7)
 }
 ```

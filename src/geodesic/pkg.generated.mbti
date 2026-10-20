@@ -16,6 +16,12 @@ pub suberror GeodesicError {
 } derive(@debug.Debug)
 pub fn GeodesicError::to_repr(Self) -> @debug.Repr
 
+pub suberror IntersectError {
+  TooEccentric(String)
+  NoConvergence(String)
+} derive(@debug.Debug)
+pub fn IntersectError::to_repr(Self) -> @debug.Repr
+
 pub suberror RhumbError {
   InvalidEllipsoid(String)
 } derive(@debug.Debug)
@@ -118,6 +124,33 @@ pub fn GeodesicLine::position(Self, Double, long_unroll? : Bool) -> DirectResult
 pub fn GeodesicLine::set_arc(Self, Double) -> Unit
 pub fn GeodesicLine::set_distance(Self, Double) -> Unit
 
+pub struct Intersect {
+  geod : Geodesic
+  a : Double
+  f : Double
+  r_r : Double
+  d : Double
+  eps : Double
+  tol : Double
+  delta : Double
+  mut t1 : Double
+  mut d1 : Double
+  mut d2 : Double
+}
+pub fn Intersect::closest(Self, Double, Double, Double, Double, Double, Double, x0? : Double, y0? : Double) -> IntersectPoint raise IntersectError
+pub fn Intersect::dist(Double, Double, x0? : Double, y0? : Double) -> Double
+pub fn Intersect::new(Geodesic) -> Self raise IntersectError
+pub fn Intersect::next(Self, Double, Double, Double, Double) -> IntersectPoint raise IntersectError
+pub fn Intersect::segment(Self, Double, Double, Double, Double, Double, Double, Double, Double) -> SegmentIntersect raise IntersectError
+pub fn Intersect::wgs84() -> Self
+
+pub(all) struct IntersectPoint {
+  x : Double
+  y : Double
+  c : Int32
+} derive(@debug.Debug)
+pub fn IntersectPoint::to_repr(Self) -> @debug.Repr
+
 pub(all) struct InverseResult {
   lat1 : Double
   lon1 : Double
@@ -140,10 +173,10 @@ pub struct PolygonArea {
   area0 : Double
   areasum : Accumulator
   perimetersum : Accumulator
-  mut num : Int
+  mut num : Int32
   mut lat1 : Double
   mut lon1 : Double
-  mut crossings : Int
+  mut crossings : Int32
   mut lat0 : Double
   mut lon0 : Double
 }
@@ -155,7 +188,7 @@ pub fn PolygonArea::test_edge(Self, Double, Double, reverse? : Bool, sign? : Boo
 pub fn PolygonArea::test_point(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
 
 pub(all) struct PolygonResult {
-  num : Int
+  num : Int32
   perimeter : Double
   area : Double
 } derive(@debug.Debug)
@@ -219,6 +252,14 @@ pub fn RhumbLine::azimuth(Self) -> Double
 pub fn RhumbLine::latitude(Self) -> Double
 pub fn RhumbLine::longitude(Self) -> Double
 pub fn RhumbLine::position(Self, Double, long_unroll? : Bool) -> RhumbDirectResult
+
+pub(all) struct SegmentIntersect {
+  x : Double
+  y : Double
+  c : Int32
+  segmode : Int32
+} derive(@debug.Debug)
+pub fn SegmentIntersect::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
