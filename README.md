@@ -228,7 +228,7 @@ CLI example (#1) → API docs (#2) → runnable scenarios (#3, #5) → this READ
 (#4, #6) → benchmarks (#8) → polygon area scenario (#10) → contest-list and
 PROGRESS refresh (#12) → release 0.1.1 on
 [mooncakes.io](https://mooncakes.io/docs/ChrisTu117/moongeodesy) (#14) → rhumb
-lines (#15). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
+lines (#15) → geodesic intersections (#19). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
 and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
 
 ## AI assistance
