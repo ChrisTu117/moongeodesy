@@ -26,7 +26,7 @@ pub fn fmin(Double, Double) -> Double
 
 pub fn hypot(Double, Double) -> Double
 
-pub fn imin(Int32, Int32) -> Int32
+pub fn imin(Int, Int) -> Int
 
 pub fn is_finite(Double) -> Bool
 
@@ -36,7 +36,7 @@ pub fn norm2(Double, Double) -> (Double, Double)
 
 pub let pi : Double
 
-pub fn polyval(Int32, FixedArray[Double], Int32, Double) -> Double
+pub fn polyval(Int, FixedArray[Double], Int, Double) -> Double
 
 pub let rad_per_deg : Double
 

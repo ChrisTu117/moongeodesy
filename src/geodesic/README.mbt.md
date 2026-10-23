@@ -1,6 +1,6 @@
 # geodesic
 
-椭球面测地线：正算、反算、航线插点、多边形面积、测地线交点。
+椭球面测地线：正算、反算、航线插点、多边形面积、测地线交点、局部 ENU 直角坐标。
 
 Package `ChrisTu117/moongeodesy/geodesic`. Angles are degrees. Lengths are metres. Areas are square metres. Azimuth is clockwise from north.
 
@@ -303,5 +303,50 @@ test "geodesic intersection" {
   assert_eq(s.segmode, 0)
   let n = ix.next(0.0, 0.0, 45.0, 135.0)
   assert_true(n.x.abs() + n.y.abs() > 1.0e7)
+}
+```
+
+## Local cartesian (ENU)
+
+局部东北天直角坐标。相对原点的 `(x, y, z)`，经地心地固转换。
+
+```moonbit nocheck
+pub fn Geocentric::wgs84() -> Geocentric
+pub fn Geocentric::grs80() -> Geocentric
+pub fn Geocentric::cgcs2000() -> Geocentric
+pub fn Geocentric::new(a : Double, f : Double) -> Geocentric raise GeocentricError
+pub fn Geocentric::from_geodesic(Geodesic) -> Geocentric
+pub fn Geocentric::forward(Self, lat : Double, lon : Double, h : Double) -> GeocentricPoint
+pub fn Geocentric::reverse(Self, x : Double, y : Double, z : Double) -> GeodeticPosition
+
+pub fn LocalCartesian::wgs84(lat0 : Double, lon0 : Double, h0? : Double) -> LocalCartesian
+pub fn LocalCartesian::grs80(lat0 : Double, lon0 : Double, h0? : Double) -> LocalCartesian
+pub fn LocalCartesian::new(
+  a : Double, f : Double, lat0 : Double, lon0 : Double, h0? : Double,
+) -> LocalCartesian raise GeocentricError
+pub fn LocalCartesian::from_geodesic(
+  Geodesic, lat0 : Double, lon0 : Double, h0? : Double,
+) -> LocalCartesian
+pub fn LocalCartesian::reset(Self, lat0 : Double, lon0 : Double, h0? : Double) -> Unit
+pub fn LocalCartesian::forward(Self, lat : Double, lon : Double, h : Double) -> LocalCartesianPoint
+pub fn LocalCartesian::reverse(Self, x : Double, y : Double, z : Double) -> GeodeticPosition
+```
+
+`h` and `h0` are ellipsoidal heights in metres. Local `x` is east, `y` is north, and `z` is up (normal to the ellipsoid). The origin is `(lat0, lon0, h0)`; `h0` defaults to 0. `Geocentric` is the ECEF conversion used internally; it is also useful on its own.
+
+`new` raises `GeocentricError::InvalidEllipsoid` when `a` is not positive or `f >= 1`. Latitudes outside [-90°, 90°] yield NaN, as elsewhere in this package.
+
+```mbt check
+///|
+test "local cartesian ENU" {
+  let lc = @geodesic.LocalCartesian::wgs84(39.9087, 116.3975)
+  let p = lc.forward(39.9097, 116.3985, 50.0)
+  assert_true(p.x > 0.0 && p.y > 0.0 && p.z > 0.0)
+  let g = lc.reverse(p.x, p.y, p.z)
+  assert_true((g.lat - 39.9097).abs() < 1.0e-10)
+  assert_true((g.lon - 116.3985).abs() < 1.0e-10)
+  assert_true((g.h - 50.0).abs() < 1.0e-7)
+  let ecef = @geodesic.Geocentric::wgs84().forward(39.9087, 116.3975, 0.0)
+  assert_true(ecef.x.abs() > 1.0e6 && ecef.z.abs() > 1.0e6)
 }
 ```

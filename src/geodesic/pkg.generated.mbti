@@ -11,6 +11,11 @@ pub let wgs84_a : Double
 pub let wgs84_f : Double
 
 // Errors
+pub suberror GeocentricError {
+  InvalidEllipsoid(String)
+} derive(@debug.Debug)
+pub fn GeocentricError::to_repr(Self) -> @debug.Repr
+
 pub suberror GeodesicError {
   InvalidEllipsoid(String)
 } derive(@debug.Debug)
@@ -47,6 +52,32 @@ pub(all) struct DirectResult {
   area12 : Double
 } derive(@debug.Debug)
 pub fn DirectResult::to_repr(Self) -> @debug.Repr
+
+pub struct Geocentric {
+  a : Double
+  f : Double
+  e2 : Double
+  e2m : Double
+  e2a : Double
+  e4a : Double
+  maxrad : Double
+}
+pub fn Geocentric::cgcs2000() -> Self
+pub fn Geocentric::equatorial_radius(Self) -> Double
+pub fn Geocentric::flattening(Self) -> Double
+pub fn Geocentric::forward(Self, Double, Double, Double) -> GeocentricPoint
+pub fn Geocentric::from_geodesic(Geodesic) -> Self
+pub fn Geocentric::grs80() -> Self
+pub fn Geocentric::new(Double, Double) -> Self raise GeocentricError
+pub fn Geocentric::reverse(Self, Double, Double, Double) -> GeodeticPosition
+pub fn Geocentric::wgs84() -> Self
+
+pub(all) struct GeocentricPoint {
+  x : Double
+  y : Double
+  z : Double
+} derive(@debug.Debug)
+pub fn GeocentricPoint::to_repr(Self) -> @debug.Repr
 
 pub struct Geodesic {
   a : Double
@@ -124,6 +155,13 @@ pub fn GeodesicLine::position(Self, Double, long_unroll? : Bool) -> DirectResult
 pub fn GeodesicLine::set_arc(Self, Double) -> Unit
 pub fn GeodesicLine::set_distance(Self, Double) -> Unit
 
+pub(all) struct GeodeticPosition {
+  lat : Double
+  lon : Double
+  h : Double
+} derive(@debug.Debug)
+pub fn GeodeticPosition::to_repr(Self) -> @debug.Repr
+
 pub struct Intersect {
   geod : Geodesic
   a : Double
@@ -147,7 +185,7 @@ pub fn Intersect::wgs84() -> Self
 pub(all) struct IntersectPoint {
   x : Double
   y : Double
-  c : Int32
+  c : Int
 } derive(@debug.Debug)
 pub fn IntersectPoint::to_repr(Self) -> @debug.Repr
 
@@ -167,16 +205,46 @@ pub(all) struct InverseResult {
 } derive(@debug.Debug)
 pub fn InverseResult::to_repr(Self) -> @debug.Repr
 
+pub struct LocalCartesian {
+  earth : Geocentric
+  mut lat0 : Double
+  mut lon0 : Double
+  mut h0 : Double
+  mut x0 : Double
+  mut y0 : Double
+  mut z0 : Double
+  r : FixedArray[Double]
+}
+pub fn LocalCartesian::equatorial_radius(Self) -> Double
+pub fn LocalCartesian::flattening(Self) -> Double
+pub fn LocalCartesian::forward(Self, Double, Double, Double) -> LocalCartesianPoint
+pub fn LocalCartesian::from_geodesic(Geodesic, Double, Double, h0? : Double) -> Self
+pub fn LocalCartesian::grs80(Double, Double, h0? : Double) -> Self
+pub fn LocalCartesian::height_origin(Self) -> Double
+pub fn LocalCartesian::latitude_origin(Self) -> Double
+pub fn LocalCartesian::longitude_origin(Self) -> Double
+pub fn LocalCartesian::new(Double, Double, Double, Double, h0? : Double) -> Self raise GeocentricError
+pub fn LocalCartesian::reset(Self, Double, Double, h0? : Double) -> Unit
+pub fn LocalCartesian::reverse(Self, Double, Double, Double) -> GeodeticPosition
+pub fn LocalCartesian::wgs84(Double, Double, h0? : Double) -> Self
+
+pub(all) struct LocalCartesianPoint {
+  x : Double
+  y : Double
+  z : Double
+} derive(@debug.Debug)
+pub fn LocalCartesianPoint::to_repr(Self) -> @debug.Repr
+
 pub struct PolygonArea {
   geod : Geodesic
   polyline : Bool
   area0 : Double
   areasum : Accumulator
   perimetersum : Accumulator
-  mut num : Int32
+  mut num : Int
   mut lat1 : Double
   mut lon1 : Double
-  mut crossings : Int32
+  mut crossings : Int
   mut lat0 : Double
   mut lon0 : Double
 }
@@ -188,7 +256,7 @@ pub fn PolygonArea::test_edge(Self, Double, Double, reverse? : Bool, sign? : Boo
 pub fn PolygonArea::test_point(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
 
 pub(all) struct PolygonResult {
-  num : Int32
+  num : Int
   perimeter : Double
   area : Double
 } derive(@debug.Debug)
@@ -256,8 +324,8 @@ pub fn RhumbLine::position(Self, Double, long_unroll? : Bool) -> RhumbDirectResu
 pub(all) struct SegmentIntersect {
   x : Double
   y : Double
-  c : Int32
-  segmode : Int32
+  c : Int
+  segmode : Int
 } derive(@debug.Debug)
 pub fn SegmentIntersect::to_repr(Self) -> @debug.Repr
 
