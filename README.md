@@ -13,7 +13,7 @@ conversions needed for maps in mainland China. No FFI; works on the `wasm`,
 
 | Package | What it does |
 | --- | --- |
-| `ChrisTu117/moongeodesy/geodesic` | Karney's geodesic algorithms, rhumb lines, and geodesic intersections: inverse & direct problems, geodesic lines, polygon area/perimeter on any ellipsoid |
+| `ChrisTu117/moongeodesy/geodesic` | Karney's geodesic algorithms, rhumb lines, geodesic intersections, and local ENU (`LocalCartesian`): inverse & direct problems, geodesic lines, polygon area/perimeter, geocentric ECEF on any ellipsoid |
 | `ChrisTu117/moongeodesy/utm` | Transverse Mercator (6th-order Krüger series), polar stereographic, UTM/UPS with standard zones, MGRS encode/decode |
 | `ChrisTu117/moongeodesy/cn` | WGS-84 → GCJ-02 (Gaode/Tencent), GCJ-02 → BD-09 (Baidu), with exact iterative inverses |
 
@@ -59,6 +59,11 @@ let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503) // h.s12, h.azi12, h.are
 // Intersection of two geodesics (signed metres from each start)
 let ix = @geodesic.Intersect::wgs84()
 let cross = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) // cross.x, cross.y, cross.c
+
+// Local East-North-Up relative to an origin (ellipsoidal height in metres)
+let lc = @geodesic.LocalCartesian::wgs84(39.9087, 116.3975)
+let enu = lc.forward(39.9097, 116.3985, 50.0) // enu.x east, enu.y north, enu.z up
+let back = lc.reverse(enu.x, enu.y, enu.z) // back.lat, back.lon, back.h
 
 // Other ellipsoids: CGCS2000 / GRS80 built in, or any (a, f)
 let cgcs = @geodesic.Geodesic::cgcs2000()
@@ -109,7 +114,7 @@ Four end-to-end scenarios, each runnable on every backend and run in CI:
 
 Signatures, units, and edge cases are in the package notes. `moon check` and `moon test` run the short example in each section.
 
-- [`geodesic`](src/geodesic/README.mbt.md) — ellipsoids, inverse and direct, lines, polygons, rhumb lines, intersections
+- [`geodesic`](src/geodesic/README.mbt.md) — ellipsoids, inverse and direct, lines, polygons, rhumb lines, intersections, LocalCartesian ENU
 - [`utm`](src/utm/README.mbt.md) — transverse Mercator, UTM/UPS, MGRS
 - [`cn`](src/cn/README.mbt.md) — WGS-84, GCJ-02, BD-09
 
@@ -122,7 +127,7 @@ moon doc --serve
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
-data sets (`moon test --target all`, 58 tests on 4 backends):
+data sets (`moon test --target all`, 66 tests on 4 backends):
 
 | Area | Reference | Result |
 | --- | --- | --- |
@@ -134,6 +139,7 @@ data sets (`moon test --target all`, 58 tests on 4 backends):
 | Rhumb direct | 296 cases vs the same RhumbSolve | max position error 10.5 nm |
 | Rhumb area | those inverse and direct cases | < 4e-15 of the ellipsoid area |
 | Geodesic intersection | 139 cases (closest, offset, next, segment) vs GeographicLib IntersectTool 2.5 | max \|Δx\|, \|Δy\| 0.45 µm; the curves meet to 8 nm |
+| LocalCartesian / Geocentric | 48 geocentric + 39 local cases (WGS-84, sphere, prolate, GRS80); PROJ topocentric cross-check | forward max \|Δ\| < 1 nm |
 | Transverse Mercator / UTM / UPS | 600 points vs PROJ 9 (pyproj) | max difference 5.5 nm |
 | MGRS | 315 points vs NGA GeoTrans (`mgrs` package) | 315/315 identical strings |
 | GCJ-02 / BD-09 | 200 points vs `coord-convert` | < 1e-11° |
@@ -228,7 +234,7 @@ CLI example (#1) → API docs (#2) → runnable scenarios (#3, #5) → this READ
 (#4, #6) → benchmarks (#8) → polygon area scenario (#10) → contest-list and
 PROGRESS refresh (#12) → release 0.1.1 on
 [mooncakes.io](https://mooncakes.io/docs/ChrisTu117/moongeodesy) (#14) → rhumb
-lines (#15) → geodesic intersections (#19). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
+lines (#15) → geodesic intersections (#19) → LocalCartesian ENU (#23). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
 and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
 
 ## AI assistance
@@ -280,7 +286,7 @@ MIT
 
 **moongeodesy** 是一个纯 MoonBit 实现的大地测量库，无 FFI，支持 wasm / wasm-gc / js / native 全部后端：
 
-- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（等方位角的 rhumb line），以及两条测地线的交点（最近点、下一点、线段）。测地线精度为纳米级（官方 GeodTest 测试集上最大误差 < 10 nm）；恒向线与 GeographicLib RhumbSolve 2.5 对照，距离最大误差 3.73 nm；交点与 IntersectTool 2.5 对照，参数最大误差 0.45 µm。
+- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（等方位角的 rhumb line）、两条测地线的交点（最近点、下一点、线段），以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。测地线精度为纳米级（官方 GeodTest 测试集上最大误差 < 10 nm）；恒向线与 GeographicLib RhumbSolve 2.5 对照，距离最大误差 3.73 nm；交点与 IntersectTool 2.5 对照，参数最大误差 0.45 µm；局部 ENU 与 GeographicLib / PROJ topocentric 对照，正算最大误差 < 1 nm。
 - **`utm`**：横轴墨卡托投影（Krüger 6 阶级数）、极球面投影、UTM/UPS 坐标（含挪威、斯瓦尔巴特特殊分带）以及 MGRS 军事格网参考系的编码与解码。与 PROJ 结果相差 < 10 nm，MGRS 字符串与 NGA GeoTrans 完全一致。
 - **`cn`**：国内地图坐标系转换——WGS-84（GPS）↔ GCJ-02（高德、腾讯，"火星坐标"）↔ BD-09（百度），提供迭代精确逆转换（往返误差 < 1e-9°）以及常用的单步近似公式。
 
@@ -294,6 +300,8 @@ let rh = @geodesic.Rhumb::wgs84()
 let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503) // 伦敦 → 东京，恒向线
 let ix = @geodesic.Intersect::wgs84()
 let p = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) // 两条测地线的最近交点
+let lc = @geodesic.LocalCartesian::wgs84(39.9087, 116.3975) // 以天安门为原点的局部 ENU
+let enu = lc.forward(39.9097, 116.3985, 50.0) // enu.x 东, enu.y 北, enu.z 天
 ```
 
 所有结果均与独立参考实现（GeographicLib Python、PROJ、GeoTrans、coord-convert）及 Karney 官方测试数据交叉验证；参考数据生成脚本见 `tools/`。

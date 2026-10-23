@@ -26,6 +26,11 @@ test "readme" {
   let ix = @geodesic.Intersect::wgs84()
   let cross = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) // cross.x, cross.y, cross.c
 
+  // Local East-North-Up relative to an origin (ellipsoidal height in metres)
+  let lc = @geodesic.LocalCartesian::wgs84(39.9087, 116.3975)
+  let enu = lc.forward(39.9097, 116.3985, 50.0) // enu.x east, enu.y north, enu.z up
+  let back = lc.reverse(enu.x, enu.y, enu.z) // back.lat, back.lon, back.h
+
   // Other ellipsoids: CGCS2000 / GRS80 built in, or any (a, f)
   let cgcs = @geodesic.Geodesic::cgcs2000()
   let sphere = @geodesic.Geodesic::new(6371000.0, 0.0)
@@ -39,5 +44,5 @@ test "readme" {
   let u = @utm.from_latlon(39.9087, 116.3975) // zone 50N, easting/northing, convergence, scale
   let m = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
   let p = @utm.from_mgrs("50S MK 48502 17797") // centre of the 1 m square
-  ignore((r, d, pts, a, cgcs, sphere, wgs, u, m, p, h, cross))
+  ignore((r, d, pts, a, cgcs, sphere, wgs, u, m, p, h, cross, back))
 }

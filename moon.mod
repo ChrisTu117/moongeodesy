@@ -18,9 +18,10 @@ keywords = [
   "mgrs",
   "rhumb",
   "intersect",
+  "localcartesian",
   "geographiclib",
 ]
 
-description = "Pure MoonBit geodesy: Karney geodesics, rhumb lines, and intersections (GeographicLib port), UTM/UPS/MGRS, and WGS-84/GCJ-02/BD-09 conversions"
+description = "Pure MoonBit geodesy: Karney geodesics, rhumb lines, intersections, and LocalCartesian ENU (GeographicLib port), UTM/UPS/MGRS, and WGS-84/GCJ-02/BD-09 conversions"
 
 source = "src"
