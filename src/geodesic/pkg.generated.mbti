@@ -185,7 +185,7 @@ pub fn Intersect::wgs84() -> Self
 pub(all) struct IntersectPoint {
   x : Double
   y : Double
-  c : Int
+  c : Int32
 } derive(@debug.Debug)
 pub fn IntersectPoint::to_repr(Self) -> @debug.Repr
 
@@ -241,10 +241,10 @@ pub struct PolygonArea {
   area0 : Double
   areasum : Accumulator
   perimetersum : Accumulator
-  mut num : Int
+  mut num : Int32
   mut lat1 : Double
   mut lon1 : Double
-  mut crossings : Int
+  mut crossings : Int32
   mut lat0 : Double
   mut lon0 : Double
 }
@@ -256,7 +256,7 @@ pub fn PolygonArea::test_edge(Self, Double, Double, reverse? : Bool, sign? : Boo
 pub fn PolygonArea::test_point(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
 
 pub(all) struct PolygonResult {
-  num : Int
+  num : Int32
   perimeter : Double
   area : Double
 } derive(@debug.Debug)
@@ -324,8 +324,8 @@ pub fn RhumbLine::position(Self, Double, long_unroll? : Bool) -> RhumbDirectResu
 pub(all) struct SegmentIntersect {
   x : Double
   y : Double
-  c : Int
-  segmode : Int
+  c : Int32
+  segmode : Int32
 } derive(@debug.Debug)
 pub fn SegmentIntersect::to_repr(Self) -> @debug.Repr
 
