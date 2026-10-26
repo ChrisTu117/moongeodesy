@@ -39,4 +39,23 @@ fn main {
   println("UTM \{u.to_string()}, MGRS \{m}")
   let p = @utm.from_mgrs("50SMK4850217797") catch { _ => panic() }
   println("MGRS 50SMK4850217797 → \{p.lat}, \{p.lon}")
+
+  // 7. Rhumb line (constant azimuth), London → Tokyo.
+  let rh = @geodesic.Rhumb::wgs84()
+  let h = rh.inverse(51.4778, -0.0015, 35.6762, 139.6503)
+  println("London → Tokyo rhumb: \{h.s12 / 1000.0} km, azimuth \{h.azi12}°")
+
+  // 8. Closest intersection of two geodesics.
+  let ix = @geodesic.Intersect::wgs84()
+  let cross = ix.closest(0.0, 0.0, 45.0, 45.0, 10.0, 135.0) catch {
+    _ => panic()
+  }
+  println("Intersect closest: x=\{cross.x} m, y=\{cross.y} m, c=\{cross.c}")
+
+  // 9. Local East-North-Up relative to Tiananmen.
+  let lc = @geodesic.LocalCartesian::wgs84(39.9087, 116.3975)
+  let enu = lc.forward(39.9097, 116.3985, 50.0)
+  println(
+    "ENU from Tiananmen: east=\{enu.x} m, north=\{enu.y} m, up=\{enu.z} m",
+  )
 }

@@ -14,6 +14,11 @@ fn usage() -> String {
     #|Usage:
     #|  geod inverse <lat1> <lon1> <lat2> <lon2>
     #|  geod direct <lat1> <lon1> <azi1> <s12>
+    #|  rhumb inverse <lat1> <lon1> <lat2> <lon2>
+    #|  rhumb direct <lat1> <lon1> <azi12> <s12>
+    #|  intersect closest <latx> <lonx> <azix> <laty> <lony> <aziy>
+    #|  enu forward <lat0> <lon0> <lat> <lon> [h]
+    #|  enu reverse <lat0> <lon0> <x> <y> <z>
     #|  coord wgs2gcj <lat> <lon>
     #|  coord gcj2wgs <lat> <lon>
     #|  coord gcj2bd <lat> <lon>
@@ -21,10 +26,15 @@ fn usage() -> String {
     #|  coord wgs2bd <lat> <lon>
     #|  coord bd2wgs <lat> <lon>
     #|
-    #|geod uses the WGS-84 ellipsoid. Distances are metres. Angles are degrees.
+    #|geod / rhumb / intersect / enu use the WGS-84 ellipsoid.
+    #|Distances and ENU offsets are metres. Angles are degrees. Heights are
+    #|ellipsoidal metres (default 0 for enu forward).
     #|coord converts one point. gcj2wgs, bd2gcj, and bd2wgs are exact inverses.
     #|
     #|  moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
+    #|  moon run src/examples/cli -- rhumb inverse 51.4778 -0.0015 35.6762 139.6503
+    #|  moon run src/examples/cli -- intersect closest 0 0 45 45 10 135
+    #|  moon run src/examples/cli -- enu forward 39.9087 116.3975 39.9097 116.3985 50
     #|  moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
   text
 }
@@ -71,6 +81,15 @@ fn bad_token(tokens : Array[String]) -> String {
 }
 
 ///|
+fn rest_from(args : Array[String], start : Int32) -> Array[String] {
+  let out : Array[String] = []
+  for i in start..<args.length() {
+    out.push(args[i])
+  }
+  out
+}
+
+///|
 fn execute(argv : Array[String]) -> Run {
   let args = user_args(argv)
   if args.length() == 0 ||
@@ -81,6 +100,15 @@ fn execute(argv : Array[String]) -> Run {
   }
   if args[0] == "geod" {
     return execute_geod(args)
+  }
+  if args[0] == "rhumb" {
+    return execute_rhumb(args)
+  }
+  if args[0] == "intersect" {
+    return execute_intersect(args)
+  }
+  if args[0] == "enu" {
+    return execute_enu(args)
   }
   if args[0] == "coord" {
     return execute_coord(args)
@@ -93,10 +121,7 @@ fn execute_geod(args : Array[String]) -> Run {
   if args.length() < 2 {
     return die("geod needs a subcommand: inverse or direct")
   }
-  let rest : Array[String] = []
-  for i in 2..<args.length() {
-    rest.push(args[i])
-  }
+  let rest = rest_from(args, 2)
   match args[1] {
     "inverse" => geod_inverse(rest)
     "direct" => geod_direct(rest)
@@ -141,6 +166,166 @@ fn geod_direct(tokens : Array[String]) -> Run {
     (Some(lat1), Some(lon1), Some(azi1), Some(s12)) => {
       let d = @geodesic.Geodesic::wgs84().direct(lat1, lon1, azi1, s12)
       Ok("lat2: \{d.lat2}\nlon2: \{d.lon2}\nazimuth2_deg: \{d.azi2}")
+    }
+    _ => die("not a number: `\{bad_token(tokens)}`")
+  }
+}
+
+///|
+fn execute_rhumb(args : Array[String]) -> Run {
+  if args.length() < 2 {
+    return die("rhumb needs a subcommand: inverse or direct")
+  }
+  let rest = rest_from(args, 2)
+  match args[1] {
+    "inverse" => rhumb_inverse(rest)
+    "direct" => rhumb_direct(rest)
+    other => die("unknown rhumb command `\{other}`")
+  }
+}
+
+///|
+fn rhumb_inverse(tokens : Array[String]) -> Run {
+  if tokens.length() != 4 {
+    return die("rhumb inverse needs 4 numbers: <lat1> <lon1> <lat2> <lon2>")
+  }
+  match
+    (
+      parse_num(tokens[0]),
+      parse_num(tokens[1]),
+      parse_num(tokens[2]),
+      parse_num(tokens[3]),
+    ) {
+    (Some(lat1), Some(lon1), Some(lat2), Some(lon2)) => {
+      let r = @geodesic.Rhumb::wgs84().inverse(lat1, lon1, lat2, lon2)
+      Ok("distance_m: \{r.s12}\nazimuth_deg: \{r.azi12}\narea_m2: \{r.area12}")
+    }
+    _ => die("not a number: `\{bad_token(tokens)}`")
+  }
+}
+
+///|
+fn rhumb_direct(tokens : Array[String]) -> Run {
+  if tokens.length() != 4 {
+    return die("rhumb direct needs 4 numbers: <lat1> <lon1> <azi12> <s12>")
+  }
+  match
+    (
+      parse_num(tokens[0]),
+      parse_num(tokens[1]),
+      parse_num(tokens[2]),
+      parse_num(tokens[3]),
+    ) {
+    (Some(lat1), Some(lon1), Some(azi12), Some(s12)) => {
+      let d = @geodesic.Rhumb::wgs84().direct(lat1, lon1, azi12, s12)
+      Ok("lat2: \{d.lat2}\nlon2: \{d.lon2}\narea_m2: \{d.area12}")
+    }
+    _ => die("not a number: `\{bad_token(tokens)}`")
+  }
+}
+
+///|
+fn execute_intersect(args : Array[String]) -> Run {
+  if args.length() < 2 {
+    return die("intersect needs a subcommand: closest")
+  }
+  let rest = rest_from(args, 2)
+  match args[1] {
+    "closest" => intersect_closest(rest)
+    other => die("unknown intersect command `\{other}`")
+  }
+}
+
+///|
+fn intersect_closest(tokens : Array[String]) -> Run {
+  if tokens.length() != 6 {
+    return die(
+      "intersect closest needs 6 numbers: <latx> <lonx> <azix> <laty> <lony> <aziy>",
+    )
+  }
+  match
+    (
+      parse_num(tokens[0]),
+      parse_num(tokens[1]),
+      parse_num(tokens[2]),
+      parse_num(tokens[3]),
+      parse_num(tokens[4]),
+      parse_num(tokens[5]),
+    ) {
+    (
+      Some(lat_x),
+      Some(lon_x),
+      Some(azi_x),
+      Some(lat_y),
+      Some(lon_y),
+      Some(azi_y),
+    ) => {
+      let cross = @geodesic.Intersect::wgs84().closest(
+        lat_x, lon_x, azi_x, lat_y, lon_y, azi_y,
+      ) catch {
+        e => return die("intersect closest failed: \{e.to_repr()}")
+      }
+      Ok("x_m: \{cross.x}\ny_m: \{cross.y}\nc: \{cross.c}")
+    }
+    _ => die("not a number: `\{bad_token(tokens)}`")
+  }
+}
+
+///|
+fn execute_enu(args : Array[String]) -> Run {
+  if args.length() < 2 {
+    return die("enu needs a subcommand: forward or reverse")
+  }
+  let rest = rest_from(args, 2)
+  match args[1] {
+    "forward" => enu_forward(rest)
+    "reverse" => enu_reverse(rest)
+    other => die("unknown enu command `\{other}`")
+  }
+}
+
+///|
+fn enu_forward(tokens : Array[String]) -> Run {
+  if tokens.length() != 4 && tokens.length() != 5 {
+    return die(
+      "enu forward needs 4 or 5 numbers: <lat0> <lon0> <lat> <lon> [h]",
+    )
+  }
+  let h_tok = if tokens.length() == 5 { tokens[4] } else { "0" }
+  match
+    (
+      parse_num(tokens[0]),
+      parse_num(tokens[1]),
+      parse_num(tokens[2]),
+      parse_num(tokens[3]),
+      parse_num(h_tok),
+    ) {
+    (Some(lat0), Some(lon0), Some(lat), Some(lon), Some(h)) => {
+      let lc = @geodesic.LocalCartesian::wgs84(lat0, lon0)
+      let enu = lc.forward(lat, lon, h)
+      Ok("east_m: \{enu.x}\nnorth_m: \{enu.y}\nup_m: \{enu.z}")
+    }
+    _ => die("not a number: `\{bad_token(tokens)}`")
+  }
+}
+
+///|
+fn enu_reverse(tokens : Array[String]) -> Run {
+  if tokens.length() != 5 {
+    return die("enu reverse needs 5 numbers: <lat0> <lon0> <x> <y> <z>")
+  }
+  match
+    (
+      parse_num(tokens[0]),
+      parse_num(tokens[1]),
+      parse_num(tokens[2]),
+      parse_num(tokens[3]),
+      parse_num(tokens[4]),
+    ) {
+    (Some(lat0), Some(lon0), Some(x), Some(y), Some(z)) => {
+      let lc = @geodesic.LocalCartesian::wgs84(lat0, lon0)
+      let back = lc.reverse(x, y, z)
+      Ok("lat: \{back.lat}\nlon: \{back.lon}\nh_m: \{back.h}")
     }
     _ => die("not a number: `\{bad_token(tokens)}`")
   }
