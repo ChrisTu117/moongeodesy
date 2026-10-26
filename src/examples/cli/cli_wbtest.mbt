@@ -48,6 +48,54 @@ test "geod inverse accepts a negative longitude" {
 }
 
 ///|
+test "rhumb inverse and direct match wgs84" {
+  let inv = expect_ok([
+    "rhumb", "inverse", "51.4778", "-0.0015", "35.6762", "139.6503",
+  ])
+  let h = @geodesic.Rhumb::wgs84().inverse(51.4778, -0.0015, 35.6762, 139.6503)
+  assert_eq(
+    inv,
+    "distance_m: \{h.s12}\nazimuth_deg: \{h.azi12}\narea_m2: \{h.area12}",
+  )
+  let dir = expect_ok(["rhumb", "direct", "51.4778", "-0.0015", "60", "1000000"])
+  let d = @geodesic.Rhumb::wgs84().direct(51.4778, -0.0015, 60.0, 1000000.0)
+  assert_eq(dir, "lat2: \{d.lat2}\nlon2: \{d.lon2}\narea_m2: \{d.area12}")
+}
+
+///|
+test "intersect closest matches wgs84" {
+  let text = expect_ok([
+    "intersect", "closest", "0", "0", "45", "45", "10", "135",
+  ])
+  let cross = @geodesic.Intersect::wgs84().closest(
+    0.0, 0.0, 45.0, 45.0, 10.0, 135.0,
+  ) catch {
+    e => abort("\{e.to_repr()}")
+  }
+  assert_eq(text, "x_m: \{cross.x}\ny_m: \{cross.y}\nc: \{cross.c}")
+}
+
+///|
+test "enu forward and reverse match LocalCartesian" {
+  let fwd = expect_ok([
+    "enu", "forward", "39.9087", "116.3975", "39.9097", "116.3985", "50",
+  ])
+  let lc = @geodesic.LocalCartesian::wgs84(39.9087, 116.3975)
+  let enu = lc.forward(39.9097, 116.3985, 50.0)
+  assert_eq(fwd, "east_m: \{enu.x}\nnorth_m: \{enu.y}\nup_m: \{enu.z}")
+  let default_h = expect_ok([
+    "enu", "forward", "39.9087", "116.3975", "39.9097", "116.3985",
+  ])
+  let enu0 = lc.forward(39.9097, 116.3985, 0.0)
+  assert_eq(default_h, "east_m: \{enu0.x}\nnorth_m: \{enu0.y}\nup_m: \{enu0.z}")
+  let rev = expect_ok([
+    "enu", "reverse", "39.9087", "116.3975", "100", "200", "50",
+  ])
+  let back = lc.reverse(100.0, 200.0, 50.0)
+  assert_eq(rev, "lat: \{back.lat}\nlon: \{back.lon}\nh_m: \{back.h}")
+}
+
+///|
 test "coord conversions match cn" {
   let p = @cn.LatLon::new(39.9087, 116.3975)
   let cases : Array[(String, @cn.LatLon)] = [
@@ -81,8 +129,11 @@ test "help lists every command" {
   let text = expect_ok([])
   let lines = [
     "geod inverse <lat1> <lon1> <lat2> <lon2>", "geod direct <lat1> <lon1> <azi1> <s12>",
-    "coord wgs2gcj <lat> <lon>", "coord gcj2wgs <lat> <lon>", "coord gcj2bd <lat> <lon>",
-    "coord bd2gcj <lat> <lon>", "coord wgs2bd <lat> <lon>", "coord bd2wgs <lat> <lon>",
+    "rhumb inverse <lat1> <lon1> <lat2> <lon2>", "rhumb direct <lat1> <lon1> <azi12> <s12>",
+    "intersect closest <latx> <lonx> <azix> <laty> <lony> <aziy>", "enu forward <lat0> <lon0> <lat> <lon> [h]",
+    "enu reverse <lat0> <lon0> <x> <y> <z>", "coord wgs2gcj <lat> <lon>", "coord gcj2wgs <lat> <lon>",
+    "coord gcj2bd <lat> <lon>", "coord bd2gcj <lat> <lon>", "coord wgs2bd <lat> <lon>",
+    "coord bd2wgs <lat> <lon>",
   ]
   for line in lines {
     assert_true(text.contains(line), msg=line)
@@ -99,6 +150,9 @@ test "unknown command explains usage" {
   let text = expect_err(["nope"])
   assert_true(text.contains("unknown command"))
   assert_true(text.contains("geod inverse"))
+  assert_true(text.contains("rhumb inverse"))
+  assert_true(text.contains("intersect closest"))
+  assert_true(text.contains("enu forward"))
   assert_true(text.contains("coord wgs2gcj"))
   assert_true(text.contains("coord bd2wgs"))
 }
@@ -113,4 +167,8 @@ test "missing arguments and bad numbers are errors" {
   assert_true(unknown.contains("wgs2utm"))
   let extra = expect_err(["geod", "direct", "0", "0", "90", "1", "2"])
   assert_true(extra.contains("geod direct"))
+  let rhumb_bad = expect_err(["rhumb", "inverse", "1", "2"])
+  assert_true(rhumb_bad.contains("rhumb inverse"))
+  let enu_bad = expect_err(["enu", "reverse", "0", "0", "1"])
+  assert_true(enu_bad.contains("enu reverse"))
 }

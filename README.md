@@ -86,18 +86,21 @@ A runnable tour lives in [`src/examples/demo`](src/examples/demo/main.mbt):
 moon run src/examples/demo
 ```
 
-A second example is a small command-line interface in [`src/examples/cli`](src/examples/cli/main.mbt). `geod` solves the WGS-84 inverse and direct problems. `coord` converts one point among WGS-84, GCJ-02, and BD-09 (`gcj2wgs`, `bd2gcj`, and `bd2wgs` are the exact inverses).
+A second example is a small command-line interface in [`src/examples/cli`](src/examples/cli/main.mbt). `geod` solves the WGS-84 geodesic inverse and direct problems. `rhumb` does the same for constant-azimuth rhumb lines. `intersect closest` finds the nearest intersection of two geodesics. `enu` converts between geodetic and local East-North-Up. `coord` converts one point among WGS-84, GCJ-02, and BD-09 (`gcj2wgs`, `bd2gcj`, and `bd2wgs` are the exact inverses).
 
 ```bash
 moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
 moon run src/examples/cli -- geod direct 22.5431 114.0579 90 1000000
+moon run src/examples/cli -- rhumb inverse 51.4778 -0.0015 35.6762 139.6503
+moon run src/examples/cli -- intersect closest 0 0 45 45 10 135
+moon run src/examples/cli -- enu forward 39.9087 116.3975 39.9097 116.3985 50
 moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
 moon run src/examples/cli -- coord gcj2wgs 39.91010 116.40374
 moon run src/examples/cli -- coord wgs2bd 39.9087 116.3975
 moon run src/examples/cli -- coord bd2wgs 39.91645 116.41012
 ```
 
-`coord` also accepts `gcj2bd` and `bd2gcj`. Run `moon run src/examples/cli` to print the full command list.
+`coord` also accepts `gcj2bd` and `bd2gcj`. `rhumb direct`, `enu reverse`, and the rest are listed when you run `moon run src/examples/cli` with no arguments.
 
 ## Scenarios
 
@@ -234,7 +237,8 @@ CLI example (#1) → API docs (#2) → runnable scenarios (#3, #5) → this READ
 (#4, #6) → benchmarks (#8) → polygon area scenario (#10) → contest-list and
 PROGRESS refresh (#12) → release 0.1.1 on
 [mooncakes.io](https://mooncakes.io/docs/ChrisTu117/moongeodesy) (#14) → rhumb
-lines (#15) → geodesic intersections (#19) → LocalCartesian ENU (#23). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
+lines (#15) → geodesic intersections (#19) → LocalCartesian ENU (#23) →
+CLI/demo coverage for rhumb, intersections, and ENU (#27). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
 and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
 
 ## AI assistance
@@ -310,9 +314,12 @@ let enu = lc.forward(39.9097, 116.3985, 50.0) // enu.x 东, enu.y 北, enu.z 天
 
 ```bash
 moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
+moon run src/examples/cli -- rhumb inverse 51.4778 -0.0015 35.6762 139.6503
+moon run src/examples/cli -- intersect closest 0 0 45 45 10 135
+moon run src/examples/cli -- enu forward 39.9087 116.3975 39.9097 116.3985 50
 moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
 ```
 
-`geod inverse` 求 WGS-84 最短距离与方位角，`geod direct` 做正算。`coord` 支持 `wgs2gcj`、`gcj2wgs`、`gcj2bd`、`bd2gcj`、`wgs2bd`、`bd2wgs`。无参数时打印命令列表。
+`geod` 做测地线正反算，`rhumb` 做恒向线正反算，`intersect closest` 求两条测地线最近交点，`enu` 做局部东北天与经纬度互转。`coord` 支持 `wgs2gcj`、`gcj2wgs`、`gcj2bd`、`bd2gcj`、`wgs2bd`、`bd2wgs`。无参数时打印命令列表。
 
 接口说明（单位、边界、短示例）在 `src/geodesic/README.mbt.md`、`src/utm/README.mbt.md`、`src/cn/README.mbt.md`。本地预览：`moon doc --serve`。
