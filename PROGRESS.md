@@ -44,7 +44,7 @@ Updated: 2026-10-26 (Asia/Shanghai). Toolchain: moon 0.1.20261021 / moonc v0.10.
 - [x] rhumb lines (#15, PR #17)
 - [x] geodesic intersections (#19, PR #20). Still open: `GeodesicExact` for |f| > 0.02. `All` (every intersection inside a radius) was not ported
 - [x] LocalCartesian / Geocentric ENU (#23, PR #24)
-- [x] `out_of_china` box edge / HK·Macau·Taipei / Singapore tests (#29); optional finer China boundary polygon still open
+- [x] `out_of_china` box edge / HK·Macau·Taipei / south-of-box tests (#29); optional finer China boundary polygon still open
 - [x] benchmarks (`moon bench`, `src/benchmarks`, #8)
 - [x] polygon area scenario `src/examples/s4_polygon_area` (#10)
 - [x] docs: package `README.mbt.md` for `geodesic` (including rhumb lines, intersections, LocalCartesian), `utm`, and `cn` (checked examples), plus `///` notes for `moon doc` / mooncakes. Preview: `moon doc --serve`
