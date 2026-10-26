@@ -4,7 +4,7 @@ WGS-84、GCJ-02（火星坐标）与 BD-09（百度）互转。
 
 Package `ChrisTu117/moongeodesy/cn`. Every angle is decimal degrees. These functions do not raise. The command-line front end is `src/examples/cli` (`coord`).
 
-`out_of_china` is the usual bounding box, not the national border: longitude 72.004°..137.8347°, latitude 0.8293°..55.8271°. Outside that box, GCJ-02 equals WGS-84. BD-09 is still applied outside the box.
+`out_of_china` is the usual bounding box, not the national border: longitude 72.004°..137.8347°, latitude 0.8293°..55.8271°. Outside that box, GCJ-02 equals WGS-84. BD-09 is still applied outside the box. Places such as Hong Kong, Macau, and Taipei fall inside the box, so the GCJ-02 offset is applied; tests cover the four box edges plus those cities and a point south of lat 0.8293°.
 
 ## Types and the China box
 
