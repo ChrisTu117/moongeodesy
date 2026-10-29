@@ -29,7 +29,7 @@ pub fn Geodesic::ellipsoid_area(Self) -> Double
 
 `cgcs2000()` uses the same `a` and `f` as `grs80()` (`a = 6378137` m, `f = 1/298.257222101`). CGCS2000 and GRS80 differ in GM and rotation rate, not in this ellipsoid.
 
-The series assume `|f|` up to about 1/50. WGS-84, GRS80, and CGCS2000 are inside that range.
+The series assume `|f|` up to about 1/50. WGS-84, GRS80, and CGCS2000 are inside that range. For a larger `|f|`, use `GeodesicExact` below.
 
 ```mbt check
 ///|
@@ -47,6 +47,73 @@ test "ellipsoids" {
     _ => true
   }
   assert_true(bad)
+}
+```
+
+## Exact geodesics
+
+高精度大地线。`|f|` 大于约 1/50 时用椭圆积分，不用级数。
+
+```moonbit nocheck
+pub fn GeodesicExact::wgs84() -> GeodesicExact
+pub fn GeodesicExact::grs80() -> GeodesicExact
+pub fn GeodesicExact::cgcs2000() -> GeodesicExact
+pub fn GeodesicExact::new(a : Double, f : Double) -> GeodesicExact raise GeodesicError
+pub fn GeodesicExact::equatorial_radius(Self) -> Double
+pub fn GeodesicExact::flattening(Self) -> Double
+pub fn GeodesicExact::ellipsoid_area(Self) -> Double
+
+pub fn GeodesicExact::inverse(
+  Self, lat1 : Double, lon1 : Double, lat2 : Double, lon2 : Double,
+  long_unroll? : Bool,
+) -> InverseResult
+
+pub fn GeodesicExact::distance(
+  Self, lat1 : Double, lon1 : Double, lat2 : Double, lon2 : Double,
+) -> Double
+
+pub fn GeodesicExact::direct(
+  Self, lat1 : Double, lon1 : Double, azi1 : Double, s12 : Double,
+  long_unroll? : Bool,
+) -> DirectResult
+
+pub fn GeodesicExact::arc_direct(
+  Self, lat1 : Double, lon1 : Double, azi1 : Double, a12 : Double,
+  long_unroll? : Bool,
+) -> DirectResult
+
+pub fn GeodesicExact::line(Self, lat1 : Double, lon1 : Double, azi1 : Double) -> GeodesicLineExact
+pub fn GeodesicExact::inverse_line(
+  Self, lat1 : Double, lon1 : Double, lat2 : Double, lon2 : Double,
+) -> GeodesicLineExact
+pub fn GeodesicExact::direct_line(
+  Self, lat1 : Double, lon1 : Double, azi1 : Double, s12 : Double,
+) -> GeodesicLineExact
+
+pub fn GeodesicLineExact::position(Self, s12 : Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicLineExact::arc_position(Self, a12 : Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicLineExact::distance(Self) -> Double
+pub fn GeodesicLineExact::arc(Self) -> Double
+pub fn GeodesicLineExact::set_distance(Self, s13 : Double) -> Unit
+pub fn GeodesicLineExact::set_arc(Self, a13 : Double) -> Unit
+pub fn GeodesicLineExact::densify(Self, max_step : Double) -> Array[(Double, Double)]
+```
+
+`GeodesicExact` is the MoonBit port of GeographicLib `GeodesicExact`. Distance, azimuth, reduced length, scale, and area use elliptic integrals (the area integral is a discrete sine transform, as in GeographicLib 2.5). `a` and `f` follow the same rules as `Geodesic::new`. Results use `InverseResult` and `DirectResult`.
+
+`GeodesicLineExact` is the line on that ellipsoid. `position`, `densify`, and `set_distance` match `GeodesicLine`.
+
+This path is the one to use when `|f| > 0.02`. It was checked against GeographicLib 2.5 `GeodSolve -E` on oblate and prolate ellipsoids with `|f|` up to 0.5: max distance error 7.5 nm, max direct position error 6.4 nm. The area term uses a direct discrete sine transform. Its length is 12 at `|f| = 0.1` and 24 at `|f| = 0.5`. It grows toward 1024 only as `|f|` approaches 1.
+
+```mbt check
+///|
+test "exact geodesic for a flat ellipsoid" {
+  let g = @geodesic.GeodesicExact::new(6378137.0, 0.1)
+  let r = g.inverse(40.6, -73.8, 1.5, 0.0)
+  assert_true((r.s12 - 8323146.984605935).abs() < 1.0e-4)
+  let line = g.inverse_line(40.6, -73.8, 1.5, 0.0)
+  let end = line.position(line.distance())
+  assert_true((end.lat2 - 1.5).abs() < 1.0e-8)
 }
 ```
 

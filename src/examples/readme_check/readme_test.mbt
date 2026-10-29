@@ -35,6 +35,10 @@ test "readme" {
   let cgcs = @geodesic.Geodesic::cgcs2000()
   let sphere = @geodesic.Geodesic::new(6371000.0, 0.0)
 
+  // High flattening (|f| above about 1/50): elliptic-integral geodesic
+  let flat = @geodesic.GeodesicExact::new(6378137.0, 0.1)
+  let hx = flat.inverse(40.6, -73.8, 1.5, 0.0) // hx.s12
+
   // Chinese map coordinate systems
   let gcj = @cn.wgs84_to_gcj02(@cn.LatLon::new(39.9087, 116.3975)) // GPS → Gaode
   let bd = @cn.gcj02_to_bd09(gcj) // Gaode → Baidu
@@ -44,5 +48,5 @@ test "readme" {
   let u = @utm.from_latlon(39.9087, 116.3975) // zone 50N, easting/northing, convergence, scale
   let m = @utm.to_mgrs(39.9087, 116.3975) // "50SMK4850217797"
   let p = @utm.from_mgrs("50S MK 48502 17797") // centre of the 1 m square
-  ignore((r, d, pts, a, cgcs, sphere, wgs, u, m, p, h, cross, back))
+  ignore((r, d, pts, a, cgcs, sphere, wgs, u, m, p, h, cross, back, hx))
 }

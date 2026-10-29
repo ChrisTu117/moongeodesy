@@ -110,6 +110,33 @@ pub fn Geodesic::polygon(Self, polyline? : Bool) -> PolygonArea
 pub fn Geodesic::polygon_area(Self, ArrayView[(Double, Double)]) -> PolygonResult
 pub fn Geodesic::wgs84() -> Self
 
+pub struct GeodesicExact {
+  a : Double
+  f : Double
+  f1 : Double
+  e2 : Double
+  ep2 : Double
+  n : Double
+  b : Double
+  c2 : Double
+  etol2 : Double
+  n_c4 : Int32
+}
+pub fn GeodesicExact::arc_direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicExact::cgcs2000() -> Self
+pub fn GeodesicExact::direct(Self, Double, Double, Double, Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicExact::direct_line(Self, Double, Double, Double, Double) -> GeodesicLineExact
+pub fn GeodesicExact::distance(Self, Double, Double, Double, Double) -> Double
+pub fn GeodesicExact::ellipsoid_area(Self) -> Double
+pub fn GeodesicExact::equatorial_radius(Self) -> Double
+pub fn GeodesicExact::flattening(Self) -> Double
+pub fn GeodesicExact::grs80() -> Self
+pub fn GeodesicExact::inverse(Self, Double, Double, Double, Double, long_unroll? : Bool) -> InverseResult
+pub fn GeodesicExact::inverse_line(Self, Double, Double, Double, Double) -> GeodesicLineExact
+pub fn GeodesicExact::line(Self, Double, Double, Double) -> GeodesicLineExact
+pub fn GeodesicExact::new(Double, Double) -> Self raise GeodesicError
+pub fn GeodesicExact::wgs84() -> Self
+
 pub struct GeodesicLine {
   a : Double
   f : Double
@@ -154,6 +181,53 @@ pub fn GeodesicLine::distance(Self) -> Double
 pub fn GeodesicLine::position(Self, Double, long_unroll? : Bool) -> DirectResult
 pub fn GeodesicLine::set_arc(Self, Double) -> Unit
 pub fn GeodesicLine::set_distance(Self, Double) -> Unit
+
+pub struct GeodesicLineExact {
+  b : Double
+  c2 : Double
+  f1 : Double
+  e2 : Double
+  lat1 : Double
+  lon1 : Double
+  azi1 : Double
+  salp1 : Double
+  calp1 : Double
+  dn1 : Double
+  salp0 : Double
+  calp0 : Double
+  ssig1 : Double
+  csig1 : Double
+  somg1 : Double
+  cchi1 : Double
+  k2 : Double
+  ek2 : Double
+  ekp2 : Double
+  ealphap2 : Double
+  eeps : Double
+  eec : Double
+  edc : Double
+  ehc : Double
+  ee0 : Double
+  ee1 : Double
+  stau1 : Double
+  ctau1 : Double
+  dd0 : Double
+  dd1 : Double
+  hh0 : Double
+  hh1 : Double
+  a4 : Double
+  b41 : Double
+  c4a : Array[Double]
+  mut s13 : Double
+  mut a13 : Double
+}
+pub fn GeodesicLineExact::arc(Self) -> Double
+pub fn GeodesicLineExact::arc_position(Self, Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicLineExact::densify(Self, Double) -> Array[(Double, Double)]
+pub fn GeodesicLineExact::distance(Self) -> Double
+pub fn GeodesicLineExact::position(Self, Double, long_unroll? : Bool) -> DirectResult
+pub fn GeodesicLineExact::set_arc(Self, Double) -> Unit
+pub fn GeodesicLineExact::set_distance(Self, Double) -> Unit
 
 pub(all) struct GeodeticPosition {
   lat : Double

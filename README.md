@@ -13,7 +13,7 @@ conversions needed for maps in mainland China. No FFI; works on the `wasm`,
 
 | Package | What it does |
 | --- | --- |
-| `ChrisTu117/moongeodesy/geodesic` | Karney's geodesic algorithms, rhumb lines, geodesic intersections, and local ENU (`LocalCartesian`): inverse & direct problems, geodesic lines, polygon area/perimeter, geocentric ECEF on any ellipsoid |
+| `ChrisTu117/moongeodesy/geodesic` | Karney's geodesic algorithms (series and `GeodesicExact` elliptic integrals), rhumb lines, geodesic intersections, and local ENU (`LocalCartesian`): inverse & direct problems, geodesic lines, polygon area/perimeter, geocentric ECEF on any ellipsoid |
 | `ChrisTu117/moongeodesy/utm` | Transverse Mercator (6th-order Krüger series), polar stereographic, UTM/UPS with standard zones, MGRS encode/decode |
 | `ChrisTu117/moongeodesy/cn` | WGS-84 → GCJ-02 (Gaode/Tencent), GCJ-02 → BD-09 (Baidu), with exact iterative inverses |
 
@@ -68,6 +68,10 @@ let back = lc.reverse(enu.x, enu.y, enu.z) // back.lat, back.lon, back.h
 // Other ellipsoids: CGCS2000 / GRS80 built in, or any (a, f)
 let cgcs = @geodesic.Geodesic::cgcs2000()
 let sphere = @geodesic.Geodesic::new(6371000.0, 0.0)
+
+// High flattening (|f| above about 1/50): elliptic-integral geodesic
+let flat = @geodesic.GeodesicExact::new(6378137.0, 0.1)
+let hx = flat.inverse(40.6, -73.8, 1.5, 0.0) // hx.s12
 
 // Chinese map coordinate systems
 let gcj = @cn.wgs84_to_gcj02(@cn.LatLon::new(39.9087, 116.3975)) // GPS → Gaode
@@ -130,13 +134,14 @@ moon doc --serve
 ## Accuracy and testing
 
 Everything is checked against independent reference implementations and
-data sets (`moon test --target all`, 66 tests on 4 backends):
+data sets (`moon test --target all`, 79 tests on 4 backends):
 
 | Area | Reference | Result |
 | --- | --- | --- |
 | Geodesic inverse | 1,000 cases from Karney's [GeodTest-short.dat](https://doi.org/10.5281/zenodo.32156) (CC0) | max distance error 7.5 nm |
 | Geodesic direct | same data set | max position error 8.6 nm |
 | Geodesic inverse/direct | 2,020 cases vs Python `geographiclib` 2.1 | relative difference < 1e-11 |
+| GeodesicExact (`\|f\|` up to 0.5, oblate and prolate) | 111 cases vs GeographicLib 2.5 `GeodSolve -E` | max distance error 7.5 nm; max position error 6.4 nm |
 | Polygon area | 8 polygons (incl. pole-enclosing, antimeridian-crossing) vs `geographiclib` | < 1e-14 of the Earth's area |
 | Rhumb inverse | 125 cases vs GeographicLib RhumbSolve 2.5 | max distance error 3.73 nm |
 | Rhumb direct | 296 cases vs the same RhumbSolve | max position error 10.5 nm |
@@ -165,6 +170,7 @@ GeodTest-short.dat, errors in nanometres):
   libraries (Krasovsky ellipsoid, a = 6378245 m); outside the rough mainland
   China bounding box the transform is the identity. Accuracy of the forward
   transform relative to the official one is ~1 m.
+- The series geodesic (`Geodesic`) assumes `|f|` up to about 1/50. `GeodesicExact` is the elliptic-integral solution for larger flattening, including prolate ellipsoids. It matches `GeodSolve -E` to a few nanometres for `|f|` up to 0.5 in the tests above.
 - Nearly antipodal points may have more than one shortest geodesic; then the
   distance is unique but azimuths/area depend on which one is returned (same
   behaviour as GeographicLib).
@@ -198,13 +204,15 @@ So one core handles roughly 300 000 geodesic distances per second.
 
 ## Port source and license
 
-- `geodesic` (geodesics, polygons, rhumb lines, and intersections) and `utm`
+- `geodesic` (geodesics, `GeodesicExact`, polygons, rhumb lines, and intersections) and `utm`
   are ports of the algorithms in
   [GeographicLib](https://github.com/geographiclib/geographiclib) by Charles
   F. F. Karney (C++ and Python versions, v2.x), released under the
   **MIT/X11 License**, © Charles Karney. Rhumb lines follow GeographicLib's
   `Rhumb` class (order-6 series; Karney 2024,
   [doi:10.1007/s11200-024-0709-z](https://doi.org/10.1007/s11200-024-0709-z)).
+  `GeodesicExact` follows GeographicLib's elliptic-integral geodesic
+  (Karney 2012–2023; area via the DST in GeographicLib 2.5).
   Intersections follow GeographicLib's `Intersect` class (Karney 2024,
   [doi:10.1061/JSUED2.SUENG-1483](https://doi.org/10.1061/JSUED2.SUENG-1483);
   preprint [arXiv:2308.00495](https://arxiv.org/abs/2308.00495)).
@@ -219,13 +227,14 @@ So one core handles roughly 300 000 geodesic distances per second.
 
 | Part | Lines of MoonBit |
 | --- | --- |
-| Core library (`geodesic`, `utm`, `cn`, `internal`) | ~5 000 |
-| Hand-written tests | ~1 150 |
-| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~19 400 |
-| Examples (demo, CLI, four scenarios) | ~1 400 |
+| Core library (`geodesic`, `utm`, `cn`, `internal`) | ~7 300 |
+| Hand-written tests | ~1 750 |
+| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~20 400 |
+| Examples (demo, CLI, four scenarios) | ~1 450 |
 
 The large total is almost entirely generated test vectors; the library itself
-is about 5.0k lines.
+is about 7.3k lines. `GeodesicExact` (elliptic integrals, the line, and the
+sine transform for area) is about 1.8k of that.
 
 ## What is new in this contest period (October 2026)
 
@@ -238,7 +247,7 @@ CLI example (#1) → API docs (#2) → runnable scenarios (#3, #5) → this READ
 PROGRESS refresh (#12) → release 0.1.1 on
 [mooncakes.io](https://mooncakes.io/docs/ChrisTu117/moongeodesy) (#14) → rhumb
 lines (#15) → geodesic intersections (#19) → LocalCartesian ENU (#23) →
-CLI/demo coverage for rhumb, intersections, and ENU (#27). See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
+CLI/demo coverage for rhumb, intersections, and ENU (#27) → `GeodesicExact` for `|f| > 0.02`. See the [commit history](https://github.com/ChrisTu117/moongeodesy/commits/main)
 and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
 
 ## AI assistance
@@ -290,7 +299,7 @@ MIT
 
 **moongeodesy** 是一个纯 MoonBit 实现的大地测量库，无 FFI，支持 wasm / wasm-gc / js / native 全部后端：
 
-- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（等方位角的 rhumb line）、两条测地线的交点（最近点、下一点、线段），以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。测地线精度为纳米级（官方 GeodTest 测试集上最大误差 < 10 nm）；恒向线与 GeographicLib RhumbSolve 2.5 对照，距离最大误差 3.73 nm；交点与 IntersectTool 2.5 对照，参数最大误差 0.45 µm；局部 ENU 与 GeographicLib / PROJ topocentric 对照，正算最大误差 < 1 nm。
+- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（等方位角的 rhumb line）、两条测地线的交点（最近点、下一点、线段），以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。级数解用于 `|f|` 约 1/50 以内（WGS-84 等）。`|f|` 更大时用 `GeodesicExact`（椭圆积分，与 GeographicLib `GeodSolve -E` 对照，`|f|` 到 0.5 时距离最大误差 7.5 nm）。测地线精度为纳米级（官方 GeodTest 测试集上最大误差 < 10 nm）；恒向线与 GeographicLib RhumbSolve 2.5 对照，距离最大误差 3.73 nm；交点与 IntersectTool 2.5 对照，参数最大误差 0.45 µm；局部 ENU 与 GeographicLib / PROJ topocentric 对照，正算最大误差 < 1 nm。
 - **`utm`**：横轴墨卡托投影（Krüger 6 阶级数）、极球面投影、UTM/UPS 坐标（含挪威、斯瓦尔巴特特殊分带）以及 MGRS 军事格网参考系的编码与解码。与 PROJ 结果相差 < 10 nm，MGRS 字符串与 NGA GeoTrans 完全一致。
 - **`cn`**：国内地图坐标系转换——WGS-84（GPS）↔ GCJ-02（高德、腾讯，"火星坐标"）↔ BD-09（百度），提供迭代精确逆转换（往返误差 < 1e-9°）以及常用的单步近似公式。
 
