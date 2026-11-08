@@ -20,6 +20,8 @@ pub fn gcj02_to_wgs84_approx(LatLon) -> LatLon
 
 pub fn out_of_china(Double, Double) -> Bool
 
+pub fn out_of_china_bbox(Double, Double) -> Bool
+
 pub fn wgs84_to_bd09(LatLon) -> LatLon
 
 pub fn wgs84_to_gcj02(LatLon) -> LatLon
