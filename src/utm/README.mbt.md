@@ -121,7 +121,7 @@ pub fn PolarStereographic::reverse(
 
 The 6th-order Krüger series stays within a few nanometres for points within about 3900 km of the central meridian. Latitude ±90 is valid.
 
-`PolarStereographic::ups()` is WGS-84 with `k0 = 0.994`. `northp=true` projects about the north pole. `x` and `y` are metres from the pole. Latitude exactly ±90 yields NaN easting and northing, including through `from_latlon`. A point a fraction of a degree off the pole is finite.
+`PolarStereographic::ups()` is WGS-84 with `k0 = 0.994`. `northp=true` projects about the north pole. `x` and `y` are metres from the pole. Latitude exactly ±90 is the pole itself: `x` and `y` are 0, so `from_latlon` gives easting and northing 2_000_000.
 
 ```mbt check
 ///|
@@ -135,6 +135,9 @@ test "transverse mercator and polar stereographic" {
   let near = ps.forward(true, 89.9, 0.0)
   let back_ps = ps.reverse(true, near.x, near.y)
   assert_true((back_ps.lat - 89.9).abs() < 1.0e-9)
-  assert_true(@utm.from_latlon(90.0, 0.0).easting.is_nan())
+  let north_pole = @utm.from_latlon(90.0, 0.0)
+  assert_eq(north_pole.easting, 2000000.0)
+  assert_eq(north_pole.northing, 2000000.0)
+  assert_eq(@utm.from_latlon(-90.0, 0.0).northing, 2000000.0)
 }
 ```

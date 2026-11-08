@@ -20,6 +20,8 @@ pub fn gcj02_to_wgs84_approx(LatLon) -> LatLon
 
 pub fn out_of_china(Double, Double) -> Bool
 
+pub fn out_of_china_bbox(Double, Double) -> Bool
+
 pub fn wgs84_to_bd09(LatLon) -> LatLon
 
 pub fn wgs84_to_gcj02(LatLon) -> LatLon
@@ -27,10 +29,11 @@ pub fn wgs84_to_gcj02(LatLon) -> LatLon
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct LatLon {
   lat : Double
   lon : Double
-} derive(Eq, @debug.Debug)
+}
 pub fn LatLon::equal(Self, Self) -> Bool
 pub fn LatLon::new(Double, Double) -> Self
 pub fn LatLon::not_equal(Self, Self) -> Bool

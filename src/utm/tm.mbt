@@ -18,6 +18,11 @@ fn eatanhe(x : Double, es : Double) -> Double {
 ///|
 /// tan(chi) where chi is the conformal latitude, given tau = tan(phi).
 fn taupf(tau : Double, es : Double) -> Double {
+  // At the poles tau = tan(±90°) is ±inf and the formula below gives
+  // inf - inf = NaN; GeographicLib returns tau unchanged there.
+  if !@geomath.is_finite(tau) {
+    return tau
+  }
   let tau1 = @geomath.hypot(1.0, tau)
   let sig = @math.sinh(eatanhe(tau / tau1, es))
   @geomath.hypot(1.0, sig) * tau - sig * tau1
@@ -70,6 +75,7 @@ pub struct TransverseMercator {
 
 ///|
 /// Result of a forward projection.
+#derive(Debug)
 pub(all) struct Projected {
   /// Easting from the origin (m). No false easting is applied.
   x : Double
@@ -79,13 +85,14 @@ pub(all) struct Projected {
   gamma : Double
   /// Point scale factor (dimensionless).
   k : Double
-} derive(Debug)
+}
 
 ///|
 pub extend Projected with @debug.Debug::{to_repr}
 
 ///|
 /// Result of a reverse projection.
+#derive(Debug)
 pub(all) struct Geographic {
   /// Latitude (degrees).
   lat : Double
@@ -95,7 +102,7 @@ pub(all) struct Geographic {
   gamma : Double
   /// Point scale factor (dimensionless).
   k : Double
-} derive(Debug)
+}
 
 ///|
 pub extend Geographic with @debug.Debug::{to_repr}

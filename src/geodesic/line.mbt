@@ -132,6 +132,7 @@ fn GeodesicLine::make(
 
 ///|
 /// Result of a direct problem / a position on a geodesic line.
+#derive(Debug)
 pub(all) struct DirectResult {
   /// Latitude of point 1 (degrees).
   lat1 : Double
@@ -157,7 +158,7 @@ pub(all) struct DirectResult {
   scale21 : Double
   /// Area between the geodesic and the equator (m²).
   area12 : Double
-} derive(Debug)
+}
 
 ///|
 pub extend DirectResult with @debug.Debug::{to_repr}

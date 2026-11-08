@@ -167,9 +167,11 @@ GeodTest-short.dat, errors in nanometres):
 ### Notes
 
 - GCJ-02 is the published reverse-engineered algorithm used by most open-source
-  libraries (Krasovsky ellipsoid, a = 6378245 m); outside the rough mainland
-  China bounding box the transform is the identity. Accuracy of the forward
-  transform relative to the official one is ~1 m.
+  libraries (Krasovsky ellipsoid, a = 6378245 m). The transform is the
+  identity outside the usual China bounding box and on the land of other
+  countries inside it (Seoul, Hanoi, ...), using Natural Earth 1:10m borders
+  (China point of view). Accuracy of the forward transform relative to the
+  official one is ~1 m.
 - The series geodesic (`Geodesic`) assumes `|f|` up to about 1/50. `GeodesicExact` is the elliptic-integral solution for larger flattening, including prolate ellipsoids. It matches `GeodSolve -E` to a few nanometres for `|f|` up to 0.5 in the tests above.
 - Nearly antipodal points may have more than one shortest geodesic; then the
   distance is unique but azimuths/area depend on which one is returned (same

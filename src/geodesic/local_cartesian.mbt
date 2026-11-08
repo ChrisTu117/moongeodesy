@@ -21,6 +21,7 @@ pub struct LocalCartesian {
 
 ///|
 /// Local cartesian ENU point in metres.
+#derive(Debug)
 pub(all) struct LocalCartesianPoint {
   /// East (metres).
   x : Double
@@ -28,7 +29,7 @@ pub(all) struct LocalCartesianPoint {
   y : Double
   /// Up, normal to the ellipsoid (metres).
   z : Double
-} derive(Debug)
+}
 
 ///|
 pub extend LocalCartesianPoint with @debug.Debug::{to_repr}

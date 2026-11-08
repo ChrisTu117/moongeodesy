@@ -61,9 +61,10 @@ let area_coeff : FixedArray[Double] = [
 
 ///|
 /// Error raised for an invalid ellipsoid.
+#derive(Debug)
 pub suberror RhumbError {
   InvalidEllipsoid(String)
-} derive(Debug)
+}
 
 ///|
 pub extend RhumbError with @debug.Debug::{to_repr}
@@ -104,6 +105,7 @@ pub struct RhumbLine {
 
 ///|
 /// Result of the inverse rhumb problem.
+#derive(Debug)
 pub(all) struct RhumbInverseResult {
   /// Latitude of point 1 (degrees). NaN when the input was outside [-90, 90].
   lat1 : Double
@@ -119,13 +121,14 @@ pub(all) struct RhumbInverseResult {
   azi12 : Double
   /// Area between the rhumb line and the equator, S12 (m²).
   area12 : Double
-} derive(Debug)
+}
 
 ///|
 pub extend RhumbInverseResult with @debug.Debug::{to_repr}
 
 ///|
 /// Result of the direct rhumb problem.
+#derive(Debug)
 pub(all) struct RhumbDirectResult {
   /// Latitude of point 1 (degrees). NaN when the input was outside [-90, 90].
   lat1 : Double
@@ -142,7 +145,7 @@ pub(all) struct RhumbDirectResult {
   /// Area between the rhumb line and the equator, S12 (m²). NaN when the
   /// line crosses a pole.
   area12 : Double
-} derive(Debug)
+}
 
 ///|
 pub extend RhumbDirectResult with @debug.Debug::{to_repr}

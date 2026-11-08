@@ -11,25 +11,29 @@ pub let wgs84_a : Double
 pub let wgs84_f : Double
 
 // Errors
+#derive(@debug.Debug)
 pub suberror GeocentricError {
   InvalidEllipsoid(String)
-} derive(@debug.Debug)
+}
 pub fn GeocentricError::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub suberror GeodesicError {
   InvalidEllipsoid(String)
-} derive(@debug.Debug)
+}
 pub fn GeodesicError::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub suberror IntersectError {
   TooEccentric(String)
   NoConvergence(String)
-} derive(@debug.Debug)
+}
 pub fn IntersectError::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub suberror RhumbError {
   InvalidEllipsoid(String)
-} derive(@debug.Debug)
+}
 pub fn RhumbError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
@@ -37,6 +41,7 @@ type Accumulator
 
 type AuxAngle
 
+#derive(@debug.Debug)
 pub(all) struct DirectResult {
   lat1 : Double
   lon1 : Double
@@ -50,7 +55,7 @@ pub(all) struct DirectResult {
   scale12 : Double
   scale21 : Double
   area12 : Double
-} derive(@debug.Debug)
+}
 pub fn DirectResult::to_repr(Self) -> @debug.Repr
 
 pub struct Geocentric {
@@ -72,11 +77,12 @@ pub fn Geocentric::new(Double, Double) -> Self raise GeocentricError
 pub fn Geocentric::reverse(Self, Double, Double, Double) -> GeodeticPosition
 pub fn Geocentric::wgs84() -> Self
 
+#derive(@debug.Debug)
 pub(all) struct GeocentricPoint {
   x : Double
   y : Double
   z : Double
-} derive(@debug.Debug)
+}
 pub fn GeocentricPoint::to_repr(Self) -> @debug.Repr
 
 pub struct Geodesic {
@@ -229,11 +235,12 @@ pub fn GeodesicLineExact::position(Self, Double, long_unroll? : Bool) -> DirectR
 pub fn GeodesicLineExact::set_arc(Self, Double) -> Unit
 pub fn GeodesicLineExact::set_distance(Self, Double) -> Unit
 
+#derive(@debug.Debug)
 pub(all) struct GeodeticPosition {
   lat : Double
   lon : Double
   h : Double
-} derive(@debug.Debug)
+}
 pub fn GeodeticPosition::to_repr(Self) -> @debug.Repr
 
 pub struct Intersect {
@@ -256,13 +263,15 @@ pub fn Intersect::next(Self, Double, Double, Double, Double) -> IntersectPoint r
 pub fn Intersect::segment(Self, Double, Double, Double, Double, Double, Double, Double, Double) -> SegmentIntersect raise IntersectError
 pub fn Intersect::wgs84() -> Self
 
+#derive(@debug.Debug)
 pub(all) struct IntersectPoint {
   x : Double
   y : Double
   c : Int32
-} derive(@debug.Debug)
+}
 pub fn IntersectPoint::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct InverseResult {
   lat1 : Double
   lon1 : Double
@@ -276,7 +285,7 @@ pub(all) struct InverseResult {
   scale12 : Double
   scale21 : Double
   area12 : Double
-} derive(@debug.Debug)
+}
 pub fn InverseResult::to_repr(Self) -> @debug.Repr
 
 pub struct LocalCartesian {
@@ -302,11 +311,12 @@ pub fn LocalCartesian::reset(Self, Double, Double, h0? : Double) -> Unit
 pub fn LocalCartesian::reverse(Self, Double, Double, Double) -> GeodeticPosition
 pub fn LocalCartesian::wgs84(Double, Double, h0? : Double) -> Self
 
+#derive(@debug.Debug)
 pub(all) struct LocalCartesianPoint {
   x : Double
   y : Double
   z : Double
-} derive(@debug.Debug)
+}
 pub fn LocalCartesianPoint::to_repr(Self) -> @debug.Repr
 
 pub struct PolygonArea {
@@ -329,11 +339,12 @@ pub fn PolygonArea::compute(Self, reverse? : Bool, sign? : Bool) -> PolygonResul
 pub fn PolygonArea::test_edge(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
 pub fn PolygonArea::test_point(Self, Double, Double, reverse? : Bool, sign? : Bool) -> PolygonResult
 
+#derive(@debug.Debug)
 pub(all) struct PolygonResult {
   num : Int32
   perimeter : Double
   area : Double
-} derive(@debug.Debug)
+}
 pub fn PolygonResult::to_repr(Self) -> @debug.Repr
 
 pub struct Rhumb {
@@ -357,6 +368,7 @@ pub fn Rhumb::line(Self, Double, Double, Double) -> RhumbLine
 pub fn Rhumb::new(Double, Double) -> Self raise RhumbError
 pub fn Rhumb::wgs84() -> Self
 
+#derive(@debug.Debug)
 pub(all) struct RhumbDirectResult {
   lat1 : Double
   lon1 : Double
@@ -365,9 +377,10 @@ pub(all) struct RhumbDirectResult {
   lat2 : Double
   lon2 : Double
   area12 : Double
-} derive(@debug.Debug)
+}
 pub fn RhumbDirectResult::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct RhumbInverseResult {
   lat1 : Double
   lon1 : Double
@@ -376,7 +389,7 @@ pub(all) struct RhumbInverseResult {
   s12 : Double
   azi12 : Double
   area12 : Double
-} derive(@debug.Debug)
+}
 pub fn RhumbInverseResult::to_repr(Self) -> @debug.Repr
 
 pub struct RhumbLine {
@@ -395,12 +408,13 @@ pub fn RhumbLine::latitude(Self) -> Double
 pub fn RhumbLine::longitude(Self) -> Double
 pub fn RhumbLine::position(Self, Double, long_unroll? : Bool) -> RhumbDirectResult
 
+#derive(@debug.Debug)
 pub(all) struct SegmentIntersect {
   x : Double
   y : Double
   c : Int32
   segmode : Int32
-} derive(@debug.Debug)
+}
 pub fn SegmentIntersect::to_repr(Self) -> @debug.Repr
 
 // Type aliases

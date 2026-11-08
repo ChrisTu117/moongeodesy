@@ -2,6 +2,7 @@
 
 ///|
 /// Errors raised by UTM/UPS/MGRS conversions.
+#derive(Debug)
 pub suberror UtmError {
   /// Latitude outside [-90, 90] or not finite.
   InvalidLatitude(Double)
@@ -11,13 +12,14 @@ pub suberror UtmError {
   OutOfRange(String)
   /// Malformed MGRS string.
   InvalidMgrs(String)
-} derive(Debug)
+}
 
 ///|
 pub extend UtmError with @debug.Debug::{to_repr}
 
 ///|
 /// A UTM or UPS coordinate. `zone` is 1..=60 for UTM and 0 for UPS.
+#derive(Debug)
 pub(all) struct UtmCoord {
   /// UTM zone 1..=60, or 0 for UPS.
   zone : Int32
@@ -31,7 +33,7 @@ pub(all) struct UtmCoord {
   gamma : Double
   /// Point scale factor (dimensionless).
   k : Double
-} derive(Debug)
+}
 
 ///|
 pub extend UtmCoord with @debug.Debug::{to_repr}
@@ -95,8 +97,7 @@ pub fn central_meridian(zone : Int32) -> Double {
 /// Any other zone raises `InvalidZone`.
 /// Easting and northing include the standard false offsets
 /// (UTM easting 500 km; southern UTM northing 10_000 km; UPS 2_000 km).
-/// Latitude exactly ±90 is accepted but the UPS easting and northing are NaN.
-/// A point a fraction of a degree off the pole is finite.
+/// At latitude exactly ±90 the UPS easting and northing are both 2_000_000.
 pub fn from_latlon(
   lat : Double,
   lon : Double,
