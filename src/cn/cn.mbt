@@ -15,12 +15,13 @@
 
 ///|
 /// A geographic position in decimal degrees.
+#derive(Eq, Debug)
 pub(all) struct LatLon {
   /// Latitude (decimal degrees). Not range-checked.
   lat : Double
   /// Longitude (decimal degrees). Not range-checked.
   lon : Double
-} derive(Eq, Debug)
+}
 
 ///|
 pub impl Show for LatLon with fn output(self, logger) {

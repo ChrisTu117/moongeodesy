@@ -19,23 +19,26 @@ pub fn to_latlon(Int32, Bool, Double, Double) -> Geographic raise UtmError
 pub fn to_mgrs(Double, Double, precision? : Int32) -> String raise UtmError
 
 // Errors
+#derive(@debug.Debug)
 pub suberror UtmError {
   InvalidLatitude(Double)
   InvalidZone(Int32)
   OutOfRange(String)
   InvalidMgrs(String)
-} derive(@debug.Debug)
+}
 pub fn UtmError::to_repr(Self) -> @debug.Repr
 
 // Types and methods
+#derive(@debug.Debug)
 pub(all) struct Geographic {
   lat : Double
   lon : Double
   gamma : Double
   k : Double
-} derive(@debug.Debug)
+}
 pub fn Geographic::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct MgrsPoint {
   zone : Int32
   north : Bool
@@ -44,7 +47,7 @@ pub(all) struct MgrsPoint {
   precision : Int32
   lat : Double
   lon : Double
-} derive(@debug.Debug)
+}
 pub fn MgrsPoint::to_repr(Self) -> @debug.Repr
 
 pub struct PolarStereographic {
@@ -61,12 +64,13 @@ pub fn PolarStereographic::new(Double, Double, Double) -> Self
 pub fn PolarStereographic::reverse(Self, Bool, Double, Double) -> Geographic
 pub fn PolarStereographic::ups() -> Self
 
+#derive(@debug.Debug)
 pub(all) struct Projected {
   x : Double
   y : Double
   gamma : Double
   k : Double
-} derive(@debug.Debug)
+}
 pub fn Projected::to_repr(Self) -> @debug.Repr
 
 pub struct TransverseMercator {
@@ -88,6 +92,7 @@ pub fn TransverseMercator::new(Double, Double, Double) -> Self
 pub fn TransverseMercator::reverse(Self, Double, Double, Double) -> Geographic
 pub fn TransverseMercator::utm() -> Self
 
+#derive(@debug.Debug)
 pub(all) struct UtmCoord {
   zone : Int32
   north : Bool
@@ -95,7 +100,7 @@ pub(all) struct UtmCoord {
   northing : Double
   gamma : Double
   k : Double
-} derive(@debug.Debug)
+}
 pub fn UtmCoord::to_mgrs(Self, Double, precision? : Int32) -> String raise UtmError
 pub fn UtmCoord::to_repr(Self) -> @debug.Repr
 pub fn UtmCoord::to_string(Self) -> String

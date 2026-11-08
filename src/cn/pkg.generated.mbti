@@ -27,10 +27,11 @@ pub fn wgs84_to_gcj02(LatLon) -> LatLon
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct LatLon {
   lat : Double
   lon : Double
-} derive(Eq, @debug.Debug)
+}
 pub fn LatLon::equal(Self, Self) -> Bool
 pub fn LatLon::new(Double, Double) -> Self
 pub fn LatLon::not_equal(Self, Self) -> Bool

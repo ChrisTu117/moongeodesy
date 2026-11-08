@@ -5,9 +5,10 @@
 
 ///|
 /// Error raised for an invalid ellipsoid.
+#derive(Debug)
 pub suberror GeocentricError {
   InvalidEllipsoid(String)
-} derive(Debug)
+}
 
 ///|
 pub extend GeocentricError with @debug.Debug::{to_repr}
@@ -28,6 +29,7 @@ pub struct Geocentric {
 
 ///|
 /// Geocentric ECEF coordinates in metres.
+#derive(Debug)
 pub(all) struct GeocentricPoint {
   /// X (metres), through the equator at lon = 0.
   x : Double
@@ -35,7 +37,7 @@ pub(all) struct GeocentricPoint {
   y : Double
   /// Z (metres), through the North Pole.
   z : Double
-} derive(Debug)
+}
 
 ///|
 pub extend GeocentricPoint with @debug.Debug::{to_repr}
@@ -43,6 +45,7 @@ pub extend GeocentricPoint with @debug.Debug::{to_repr}
 ///|
 /// Geodetic position: latitude and longitude in degrees, ellipsoidal height
 /// in metres.
+#derive(Debug)
 pub(all) struct GeodeticPosition {
   /// Latitude (degrees).
   lat : Double
@@ -50,7 +53,7 @@ pub(all) struct GeodeticPosition {
   lon : Double
   /// Height above the ellipsoid (metres).
   h : Double
-} derive(Debug)
+}
 
 ///|
 pub extend GeodeticPosition with @debug.Debug::{to_repr}

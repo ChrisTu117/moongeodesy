@@ -70,6 +70,7 @@ pub struct TransverseMercator {
 
 ///|
 /// Result of a forward projection.
+#derive(Debug)
 pub(all) struct Projected {
   /// Easting from the origin (m). No false easting is applied.
   x : Double
@@ -79,13 +80,14 @@ pub(all) struct Projected {
   gamma : Double
   /// Point scale factor (dimensionless).
   k : Double
-} derive(Debug)
+}
 
 ///|
 pub extend Projected with @debug.Debug::{to_repr}
 
 ///|
 /// Result of a reverse projection.
+#derive(Debug)
 pub(all) struct Geographic {
   /// Latitude (degrees).
   lat : Double
@@ -95,7 +97,7 @@ pub(all) struct Geographic {
   gamma : Double
   /// Point scale factor (dimensionless).
   k : Double
-} derive(Debug)
+}
 
 ///|
 pub extend Geographic with @debug.Debug::{to_repr}

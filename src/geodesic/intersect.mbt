@@ -9,10 +9,11 @@
 ///|
 /// Error raised when the ellipsoid is too eccentric, or when the
 /// intersection iteration does not converge.
+#derive(Debug)
 pub suberror IntersectError {
   TooEccentric(String)
   NoConvergence(String)
-} derive(Debug)
+}
 
 ///|
 pub extend IntersectError with @debug.Debug::{to_repr}
@@ -20,6 +21,7 @@ pub extend IntersectError with @debug.Debug::{to_repr}
 ///|
 /// Signed distances from the origins of geodesics X and Y to an
 /// intersection, plus a coincidence indicator.
+#derive(Debug)
 pub(all) struct IntersectPoint {
   /// Signed distance along geodesic X (m).
   x : Double
@@ -28,13 +30,14 @@ pub(all) struct IntersectPoint {
   /// 0 when the geodesics merely cross. +1 when they are coincident and
   /// parallel. -1 when they are coincident and antiparallel.
   c : Int32
-} derive(Debug)
+}
 
 ///|
 pub extend IntersectPoint with @debug.Debug::{to_repr}
 
 ///|
 /// Intersection of two geodesic segments.
+#derive(Debug)
 pub(all) struct SegmentIntersect {
   /// Signed distance from the first endpoint of segment X (m).
   x : Double
@@ -47,7 +50,7 @@ pub(all) struct SegmentIntersect {
   /// `0 <= x <=` the length of X, and 1 if `x` is past the end of X.
   /// `ky` is the same flag for Y.
   segmode : Int32
-} derive(Debug)
+}
 
 ///|
 pub extend SegmentIntersect with @debug.Debug::{to_repr}

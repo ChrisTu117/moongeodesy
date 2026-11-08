@@ -45,6 +45,7 @@ fn Accumulator::remainder(self : Accumulator, y : Double) -> Unit {
 
 ///|
 /// Result of a polygon computation.
+#derive(Debug)
 pub(all) struct PolygonResult {
   /// Number of vertices.
   num : Int32
@@ -53,7 +54,7 @@ pub(all) struct PolygonResult {
   /// Area (m²), NaN for a polyline. Counter-clockwise traversal gives a
   /// positive area unless `reverse=true`.
   area : Double
-} derive(Debug)
+}
 
 ///|
 pub extend PolygonResult with @debug.Debug::{to_repr}

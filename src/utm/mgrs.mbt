@@ -139,6 +139,7 @@ pub fn to_mgrs(
 
 ///|
 /// A decoded MGRS reference.
+#derive(Debug)
 pub(all) struct MgrsPoint {
   /// UTM zone 1..=60, or 0 for UPS.
   zone : Int32
@@ -154,7 +155,7 @@ pub(all) struct MgrsPoint {
   lat : Double
   /// Longitude of that corner or centre (degrees).
   lon : Double
-} derive(Debug)
+}
 
 ///|
 pub extend MgrsPoint with @debug.Debug::{to_repr}

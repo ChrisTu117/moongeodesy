@@ -2,6 +2,7 @@
 
 ///|
 /// Errors raised by UTM/UPS/MGRS conversions.
+#derive(Debug)
 pub suberror UtmError {
   /// Latitude outside [-90, 90] or not finite.
   InvalidLatitude(Double)
@@ -11,13 +12,14 @@ pub suberror UtmError {
   OutOfRange(String)
   /// Malformed MGRS string.
   InvalidMgrs(String)
-} derive(Debug)
+}
 
 ///|
 pub extend UtmError with @debug.Debug::{to_repr}
 
 ///|
 /// A UTM or UPS coordinate. `zone` is 1..=60 for UTM and 0 for UPS.
+#derive(Debug)
 pub(all) struct UtmCoord {
   /// UTM zone 1..=60, or 0 for UPS.
   zone : Int32
@@ -31,7 +33,7 @@ pub(all) struct UtmCoord {
   gamma : Double
   /// Point scale factor (dimensionless).
   k : Double
-} derive(Debug)
+}
 
 ///|
 pub extend UtmCoord with @debug.Debug::{to_repr}

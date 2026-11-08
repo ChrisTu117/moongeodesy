@@ -56,9 +56,10 @@ let m_all : Int32 = m_distance | m_reducedlength | m_geodesicscale | m_area
 
 ///|
 /// Error raised for an invalid ellipsoid.
+#derive(Debug)
 pub suberror GeodesicError {
   InvalidEllipsoid(String)
-} derive(Debug)
+}
 
 ///|
 pub extend GeodesicError with @debug.Debug::{to_repr}
@@ -1050,6 +1051,7 @@ fn Geodesic::gen_inverse(
 
 ///|
 /// Result of the inverse geodesic problem.
+#derive(Debug)
 pub(all) struct InverseResult {
   /// Latitude of point 1 (degrees). NaN when the input was outside [-90, 90].
   lat1 : Double
@@ -1075,7 +1077,7 @@ pub(all) struct InverseResult {
   scale21 : Double
   /// Area between the geodesic and the equator, S12 (m²).
   area12 : Double
-} derive(Debug)
+}
 
 ///|
 pub extend InverseResult with @debug.Debug::{to_repr}
