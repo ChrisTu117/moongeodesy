@@ -43,8 +43,8 @@ pub fn PolarStereographic::ups() -> PolarStereographic {
 ///|
 /// Project `(lat, lon)` in degrees about the north pole (`northp=true`)
 /// or the south pole. `x` and `y` are metres from the pole.
-/// Latitude exactly ±90 yields NaN for `x` and `y`. A point a fraction of
-/// a degree off the pole is finite.
+/// At the pole itself `x` and `y` are 0, `k` is `k0` and `gamma` is the
+/// (normalized) longitude, as in GeographicLib.
 pub fn PolarStereographic::forward(
   self : PolarStereographic,
   northp : Bool,

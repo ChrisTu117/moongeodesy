@@ -97,8 +97,7 @@ pub fn central_meridian(zone : Int32) -> Double {
 /// Any other zone raises `InvalidZone`.
 /// Easting and northing include the standard false offsets
 /// (UTM easting 500 km; southern UTM northing 10_000 km; UPS 2_000 km).
-/// Latitude exactly ±90 is accepted but the UPS easting and northing are NaN.
-/// A point a fraction of a degree off the pole is finite.
+/// At latitude exactly ±90 the UPS easting and northing are both 2_000_000.
 pub fn from_latlon(
   lat : Double,
   lon : Double,

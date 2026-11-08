@@ -18,6 +18,11 @@ fn eatanhe(x : Double, es : Double) -> Double {
 ///|
 /// tan(chi) where chi is the conformal latitude, given tau = tan(phi).
 fn taupf(tau : Double, es : Double) -> Double {
+  // At the poles tau = tan(±90°) is ±inf and the formula below gives
+  // inf - inf = NaN; GeographicLib returns tau unchanged there.
+  if !@geomath.is_finite(tau) {
+    return tau
+  }
   let tau1 = @geomath.hypot(1.0, tau)
   let sig = @math.sinh(eatanhe(tau / tau1, es))
   @geomath.hypot(1.0, sig) * tau - sig * tau1
