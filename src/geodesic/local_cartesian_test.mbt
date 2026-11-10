@@ -48,16 +48,32 @@ fn earth_for_tag(tag : Int32) -> @geodesic.Geocentric {
 }
 
 ///|
-fn lc_of(tag : Int32, lat0 : Double, lon0 : Double, h0 : Double) -> @geodesic.LocalCartesian {
+fn lc_of(
+  tag : Int32,
+  lat0 : Double,
+  lon0 : Double,
+  h0 : Double,
+) -> @geodesic.LocalCartesian {
   let e = earth_for_tag(tag)
-  @geodesic.LocalCartesian::new(e.equatorial_radius(), e.flattening(), lat0, lon0, h0~) catch {
+  @geodesic.LocalCartesian::new(
+    e.equatorial_radius(),
+    e.flattening(),
+    lat0,
+    lon0,
+    h0~,
+  ) catch {
     _ => abort("bad ellipsoid")
   }
 }
 
 ///|
 /// Horizontal position error (m) between two geographic points.
-fn lc_pos_err(lat : Double, lon : Double, lat2 : Double, lon2 : Double) -> Double {
+fn lc_pos_err(
+  lat : Double,
+  lon : Double,
+  lat2 : Double,
+  lon2 : Double,
+) -> Double {
   let dn = lc_ang_err(lat, lat2) * 111319.5
   let de = if lat.abs() == 90.0 {
     0.0 // longitude is arbitrary at a pole
