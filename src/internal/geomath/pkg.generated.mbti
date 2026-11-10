@@ -20,6 +20,8 @@ pub let deg_per_rad : Double
 
 pub fn degrees(Double) -> Double
 
+pub fn eatanhe(Double, Double) -> Double
+
 pub fn fmax(Double, Double) -> Double
 
 pub fn fmin(Double, Double) -> Double
@@ -53,6 +55,10 @@ pub fn sincosde(Double, Double) -> (Double, Double)
 pub fn sq(Double) -> Double
 
 pub fn sum2(Double, Double) -> (Double, Double)
+
+pub fn tauf(Double, Double) -> Double
+
+pub fn taupf(Double, Double) -> Double
 
 // Errors
 

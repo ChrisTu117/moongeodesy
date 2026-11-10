@@ -6,57 +6,6 @@
 // nanometres within ~3900 km of the central meridian.
 
 ///|
-/// e * atanh(e * x) (or the oblate/prolate analogue) for signed `es`.
-fn eatanhe(x : Double, es : Double) -> Double {
-  if es > 0.0 {
-    es * @math.atanh(es * x)
-  } else {
-    -es * @math.atan(es * x)
-  }
-}
-
-///|
-/// tan(chi) where chi is the conformal latitude, given tau = tan(phi).
-fn taupf(tau : Double, es : Double) -> Double {
-  // At the poles tau = tan(±90°) is ±inf and the formula below gives
-  // inf - inf = NaN; GeographicLib returns tau unchanged there.
-  if !@geomath.is_finite(tau) {
-    return tau
-  }
-  let tau1 = @geomath.hypot(1.0, tau)
-  let sig = @math.sinh(eatanhe(tau / tau1, es))
-  @geomath.hypot(1.0, sig) * tau - sig * tau1
-}
-
-///|
-/// Inverse of `taupf` by Newton's method.
-fn tauf(taup : Double, es : Double) -> Double {
-  let tol = @geomath.dbl_epsilon.sqrt() / 10.0
-  let taumax = 2.0 / @geomath.dbl_epsilon.sqrt()
-  let e2m = 1.0 - es * es
-  let mut tau = if taup.abs() > 70.0 {
-    taup * @math.exp(eatanhe(1.0, es))
-  } else {
-    taup / e2m
-  }
-  let stol = tol * @geomath.fmax(1.0, taup.abs())
-  if !(tau.abs() < taumax) {
-    return tau
-  }
-  for _ in 0..<5 {
-    let taupa = taupf(tau, es)
-    let dtau = (taup - taupa) *
-      (1.0 + e2m * tau * tau) /
-      (e2m * @geomath.hypot(1.0, tau) * @geomath.hypot(1.0, taupa))
-    tau = tau + dtau
-    if !(dtau.abs() >= stol) {
-      break
-    }
-  }
-  tau
-}
-
-///|
 /// A transverse Mercator projection on an ellipsoid.
 pub struct TransverseMercator {
   a : Double
@@ -118,7 +67,7 @@ pub fn TransverseMercator::new(
   let e2 = f * (2.0 - f)
   let es = (if f < 0.0 { -1.0 } else { 1.0 }) * e2.abs().sqrt()
   let e2m = 1.0 - e2
-  let c = e2m.sqrt() * @math.exp(eatanhe(1.0, es))
+  let c = e2m.sqrt() * @math.exp(@geomath.eatanhe(1.0, es))
   let n = f / (2.0 - f)
   let n2 = n * n
   let b1 = (1.0 + n2 * (1.0 / 4.0 + n2 * (1.0 / 64.0 + n2 / 256.0))) / (1.0 + n)
@@ -224,7 +173,7 @@ pub fn TransverseMercator::forward(
   let mut k = 0.0
   if lat != 90.0 {
     let tau = sphi / cphi
-    let taup = taupf(tau, self.es)
+    let taup = @geomath.taupf(tau, self.es)
     xip = @math.atan2(taup, clam)
     etap = @math.asinh(slam / @geomath.hypot(taup, clam))
     gamma = @geomath.atan2d(slam * taup, clam * @geomath.hypot(1.0, taup))
@@ -311,7 +260,7 @@ pub fn TransverseMercator::reverse(
   if r != 0.0 {
     lon = @geomath.atan2d(s, c)
     let sxip = @math.sin(xip)
-    let tau = tauf(sxip / r, self.es)
+    let tau = @geomath.tauf(sxip / r, self.es)
     gamma = gamma + @geomath.atan2d(sxip * @math.tanh(etap), c)
     lat = @geomath.atan2d(tau, 1.0)
     k = k *

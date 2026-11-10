@@ -26,6 +26,10 @@ fn usage() -> String {
     #|  coord wgs2bd <lat> <lon>
     #|  coord bd2wgs <lat> <lon>
     #|  mag <lat> <lon> <date> [h]
+    #|  lcc forward <stdlat1> <stdlat2> <lat0> <lon0> <lat> <lon>
+    #|  lcc reverse <stdlat1> <stdlat2> <lat0> <lon0> <x> <y>
+    #|  albers forward <stdlat1> <stdlat2> <lat0> <lon0> <lat> <lon>
+    #|  albers reverse <stdlat1> <stdlat2> <lat0> <lon0> <x> <y>
     #|
     #|geod / rhumb / intersect / enu use the WGS-84 ellipsoid.
     #|Distances and ENU offsets are metres. Angles are degrees. Heights are
@@ -33,6 +37,8 @@ fn usage() -> String {
     #|coord converts one point. gcj2wgs, bd2gcj, and bd2wgs are exact inverses.
     #|mag evaluates the World Magnetic Model 2025; <date> is YYYY-MM-DD or a
     #|decimal year in 2025.0..2030.0, h is metres above the ellipsoid.
+    #|lcc and albers are conic projections on WGS-84 with false origin
+    #|(lat0, lon0) and no false easting/northing.
     #|
     #|  moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
     #|  moon run src/examples/cli -- rhumb inverse 51.4778 -0.0015 35.6762 139.6503
@@ -40,6 +46,7 @@ fn usage() -> String {
     #|  moon run src/examples/cli -- enu forward 39.9087 116.3975 39.9097 116.3985 50
     #|  moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
     #|  moon run src/examples/cli -- mag 39.9087 116.3975 2026-11-10
+    #|  moon run src/examples/cli -- albers forward 25 47 0 105 39.9087 116.3975
   text
 }
 
@@ -119,6 +126,9 @@ fn execute(argv : Array[String]) -> Run {
   }
   if args[0] == "mag" {
     return execute_mag(rest_from(args, 1))
+  }
+  if args[0] == "lcc" || args[0] == "albers" {
+    return execute_conic(args)
   }
   die("unknown command `\{args[0]}`")
 }
@@ -436,5 +446,60 @@ fn execute_mag(tokens : Array[String]) -> Run {
       )
     }
     _ => die("not a number: `\{bad_token([tokens[0], tokens[1], h_tok])}`")
+  }
+}
+
+///|
+fn execute_conic(args : Array[String]) -> Run {
+  let name = args[0]
+  if args.length() < 2 || (args[1] != "forward" && args[1] != "reverse") {
+    return die("\{name} needs a subcommand: forward or reverse")
+  }
+  let tokens = rest_from(args, 2)
+  if tokens.length() != 6 {
+    return die("\{name} \{args[1]} needs 6 numbers")
+  }
+  let v : Array[Double] = []
+  for t in tokens {
+    match parse_num(t) {
+      Some(x) => v.push(x)
+      None => return die("not a number: `\{t}`")
+    }
+  }
+  let a = 6378137.0
+  let f = 1.0 / 298.257223563
+  let grid = try {
+    if name == "lcc" {
+      @conic.ConicGrid::lambert_2sp(
+        a,
+        f,
+        lat_origin=v[2],
+        lon_origin=v[3],
+        stdlat1=v[0],
+        stdlat2=v[1],
+      )
+    } else {
+      @conic.ConicGrid::albers(
+        a,
+        f,
+        lat_origin=v[2],
+        lon_origin=v[3],
+        stdlat1=v[0],
+        stdlat2=v[1],
+      )
+    }
+  } catch {
+    e => return die("\{name} failed: \{e.to_repr()}")
+  }
+  if args[1] == "forward" {
+    let p = grid.forward(v[4], v[5])
+    Ok(
+      "easting_m: \{p.easting}\nnorthing_m: \{p.northing}\nconvergence_deg: \{p.gamma}\nscale: \{p.k}",
+    )
+  } else {
+    let q = grid.reverse(v[4], v[5])
+    Ok(
+      "lat: \{q.lat}\nlon: \{q.lon}\nconvergence_deg: \{q.gamma}\nscale: \{q.k}",
+    )
   }
 }

@@ -202,3 +202,46 @@ test "mag rejects bad input" {
   )
   assert_true(expect_err(["mag", "x", "116.4", "2026.0"]).contains("`x`"))
 }
+
+///|
+test "lcc and albers forward and reverse match the library" {
+  let a = 6378137.0
+  let f = 1.0 / 298.257223563
+  let aea = @conic.ConicGrid::albers(
+    a,
+    f,
+    lat_origin=0.0,
+    lon_origin=105.0,
+    stdlat1=25.0,
+    stdlat2=47.0,
+  )
+  let p = aea.forward(39.9087, 116.3975)
+  assert_eq(
+    expect_ok([
+      "albers", "forward", "25", "47", "0", "105", "39.9087", "116.3975",
+    ]),
+    "easting_m: \{p.easting}\nnorthing_m: \{p.northing}\nconvergence_deg: \{p.gamma}\nscale: \{p.k}",
+  )
+  let lcc = @conic.ConicGrid::lambert_2sp(
+    a,
+    f,
+    lat_origin=0.0,
+    lon_origin=105.0,
+    stdlat1=25.0,
+    stdlat2=47.0,
+  )
+  let q = lcc.reverse(1000000.0, 4000000.0)
+  assert_eq(
+    expect_ok(["lcc", "reverse", "25", "47", "0", "105", "1000000", "4000000"]),
+    "lat: \{q.lat}\nlon: \{q.lon}\nconvergence_deg: \{q.gamma}\nscale: \{q.k}",
+  )
+  assert_true(expect_err(["lcc", "sideways"]).contains("forward or reverse"))
+  assert_true(
+    expect_err(["albers", "forward", "25", "47"]).contains("6 numbers"),
+  )
+  assert_true(
+    expect_err(["lcc", "forward", "95", "47", "0", "105", "40", "116"]).contains(
+      "InvalidStandardLatitude",
+    ),
+  )
+}
