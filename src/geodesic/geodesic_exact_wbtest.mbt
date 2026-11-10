@@ -20,3 +20,22 @@ test "elliptic integrals match GeographicLib" {
   let ctau = (1.0 - 0.09).sqrt()
   assert_true((en.delta_einv(0.3, ctau) - 0.02003625722829605).abs() < 1.0e-14)
 }
+
+///|
+test "DST length used for the exact area (README claim)" {
+  // README.mbt.md: 12 at |f| = 0.1, 24 at |f| = 0.5, at most 1536 for
+  // oblate (n -> 1) and 4096 for extremely prolate (n -> -1) ellipsoids.
+  let n = (f : Double) => f / (2.0 - f)
+  assert_eq(c4_nterms(n(0.1)), 12)
+  assert_eq(c4_nterms(n(0.5)), 24)
+  assert_eq(c4_nterms(1.0), 1536)
+  assert_eq(c4_nterms(-1.0), 4096)
+  let mut most = 0
+  for i in 0..<=200 {
+    let m = c4_nterms((i - 100).to_double() / 100.0)
+    if m > most {
+      most = m
+    }
+  }
+  assert_eq(most, 4096)
+}

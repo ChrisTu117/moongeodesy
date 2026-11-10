@@ -4,3 +4,7 @@ import {
   "moonbitlang/core/cmp",
   "ChrisTu117/moongeodesy/internal/geomath",
 }
+
+import {
+  "moonbitlang/core/double",
+} for "test"
