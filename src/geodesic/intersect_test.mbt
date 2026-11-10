@@ -139,6 +139,9 @@ test "closest matches IntersectTool" {
   assert_true(ix_max(dx) < 5.0e-7) // README: < 0.5 µm
   assert_true(ix_max(dy) < 5.0e-7)
   assert_true(ix_max(sep) < 1.0e-8) // README: the curves meet to < 10 nm
+  // Ties (two intersections equally close) depend on last-bit rounding and
+  // so on the backend; at most 3 here, so the bounds above are not vacuous.
+  assert_true(dx.length() >= ix_closest.length() - 3)
 }
 
 ///|
@@ -265,6 +268,7 @@ test "segment matches IntersectTool" {
   assert_true(ix_max(dx) < 5.0e-7) // README: < 0.5 µm
   assert_true(ix_max(dy) < 5.0e-7)
   assert_true(ix_max(sep) < 1.0e-8) // README: the curves meet to < 10 nm
+  assert_true(dx.length() >= ix_segment.length() - 3)
 }
 
 ///|
