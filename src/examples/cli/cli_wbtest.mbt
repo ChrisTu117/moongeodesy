@@ -172,3 +172,33 @@ test "missing arguments and bad numbers are errors" {
   let enu_bad = expect_err(["enu", "reverse", "0", "0", "1"])
   assert_true(enu_bad.contains("enu reverse"))
 }
+
+///|
+test "mag matches the WMM2025 model for a date and a decimal year" {
+  let wmm = @magnetic.MagneticModel::wmm2025()
+  let year = @magnetic.decimal_year(2026, 11, 10)
+  let e = wmm.field(39.9087, 116.3975, 0.0, year)
+  let text = expect_ok(["mag", "39.9087", "116.3975", "2026-11-10"])
+  assert_true(text.has_prefix("declination_deg: \{e.decl}\n"))
+  assert_true(text.contains("h_nt: \{e.h}\n"))
+  assert_true(text.has_suffix("compass: normal"))
+  let e2 = wmm.field(-80.0, 240.0, 100000.0, 2027.5)
+  let text2 = expect_ok(["mag", "-80", "240", "2027.5", "100000"])
+  assert_true(text2.has_prefix("declination_deg: \{e2.decl}\n"))
+  let pole = expect_ok(["mag", "89", "-121", "2025.0", "28000"])
+  assert_true(pole.contains("blackout"))
+}
+
+///|
+test "mag rejects bad input" {
+  assert_true(expect_err(["mag", "39.9", "116.4"]).contains("mag needs"))
+  assert_true(
+    expect_err(["mag", "39.9", "116.4", "2026-02-30"]).contains("not a date"),
+  )
+  assert_true(
+    expect_err(["mag", "39.9", "116.4", "2031-01-01"]).contains(
+      "DateOutOfRange",
+    ),
+  )
+  assert_true(expect_err(["mag", "x", "116.4", "2026.0"]).contains("`x`"))
+}
