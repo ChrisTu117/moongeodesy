@@ -27,6 +27,7 @@ differences). None of the references below use it:
 Needs: pip install mpmath pyproj
 Usage: python3 tools/gen_conic.py <dir with the GIGS 5102/5103/5109 files>
 """
+import hashlib
 import os
 import sys
 
@@ -43,6 +44,7 @@ KRASOVSKY = (6378245.0, 1 / 298.3)
 CLARKE1866 = (6378206.4, 1 / 294.978698213898)
 INTL1924 = (6378388.0, 1 / 297.0)
 CLARKE1880IGN = (6378249.2, 1 / 293.4660212936269)
+SPHERE = (6371000.0, 0.0)
 
 # kind: 0 = LCC 2SP, 1 = LCC 1SP, 2 = Albers.
 # (name, kind, (a, f), lat0, lon0, stdlat1, stdlat2, k0)
@@ -63,6 +65,8 @@ SETUPS = [
     ("LCC near equator 0.5/3", 0, WGS84, 0.0, 0.0, 0.5, 3.0, 1.0),
     ("Albers -5/10", 2, WGS84, 0.0, 30.0, -5.0, 10.0, 1.0),
     ("Albers one parallel 40", 2, WGS84, 40.0, -100.0, 40.0, 40.0, 1.0),
+    ("Sphere LCC 30/60", 0, SPHERE, 0.0, 10.0, 30.0, 60.0, 1.0),
+    ("Sphere Albers 20/50", 2, SPHERE, 0.0, 10.0, 20.0, 50.0, 1.0),
 ]
 
 LATS = [-89.0, -75.0, -60.0, -45.0, -30.0, -15.0, 0.0, 12.5, 25.0, 36.0, 47.0, 60.0, 75.0, 89.0]
@@ -99,6 +103,8 @@ def t_of(phi, e):
 
 def alpha_of(phi, e2, e):
     s = mp.sin(phi)
+    if e == 0:
+        return 2 * s  # limit of the formula below as e -> 0
     return (1 - e2) * (s / (1 - e2 * s * s) - 1 / (2 * e) * mp.log((1 - e * s) / (1 + e * s)))
 
 
@@ -154,7 +160,8 @@ def mp_forward(setup, lat, lon):
 
 def proj_string(setup):
     _, kind, (a, f), lat0, lon0, s1, s2, k0 = setup
-    base = f"+a={a!r} +rf={1 / f!r} +x_0=0 +y_0=0 +units=m +no_defs"
+    shape_args = f"+R={a!r}" if f == 0 else f"+a={a!r} +rf={1 / f!r}"
+    base = f"{shape_args} +x_0=0 +y_0=0 +units=m +no_defs"
     if kind == 0:
         return f"+proj=lcc +lat_1={s1!r} +lat_2={s2!r} +lat_0={lat0!r} +lon_0={lon0!r} {base}"
     if kind == 1:
@@ -229,6 +236,14 @@ def gen_main():
 FT = 0.3048
 FTUS = 1200.0 / 3937.0
 GRAD = 0.9  # degrees per gradian
+GIGS_SHA256 = {
+    "GIGS_conv_5102_LCC1_output_part1.txt": "7f8da50cfd95cf78b4fa39d495c9bdc2e2343c1226bbdd62d948b05bd0c82acc",
+    "GIGS_conv_5102_LCC1_output_part2.txt": "4ffc308c311b042d30e6e8bc81f0c78d57a04120115bc356bd7e78d093f2a150",
+    "GIGS_conv_5103_LCC2_output_part1.txt": "b1926864fc13c97c7ad51cb4dbb1f2f18b0a785168e4a0daf26431c8bbff1ffa",
+    "GIGS_conv_5103_LCC2_output_part2.txt": "84cae45385c51c95dce35893568b046bff8e3420162f4e904c67794ef76fbd2c",
+    "GIGS_conv_5103_LCC2_output_part3.txt": "622dfdec61fb94bf4b802a11ecc5c9db1f4bb876bac341d5fdfc2ae7525f5a53",
+    "GIGS_conv_5109_Albers_output.txt": "301c2634fd4c1c1ee4a6e65f258a2deb984593b79c229967d3dab34053eec121",
+}
 # file, kind, (a, f), lat0, lon0, s1, s2, k0, FE (m), FN (m), length unit (m),
 # angle unit (deg); EPSG parameters as printed by pyproj for each CRS.
 GIGS = [
@@ -255,7 +270,10 @@ def gen_gigs(folder):
         fname, kind, (a, f), lat0, lon0, s1, s2, k0, fe, fn, lu, au = g
         sets.append([kind, a, f, lat0, lon0, s1, s2, k0, fe, fn, lu, au])
         tol = None
-        for line in open(os.path.join(folder, fname), encoding="utf-8"):
+        raw = open(os.path.join(folder, fname), "rb").read()
+        if hashlib.sha256(raw).hexdigest() != GIGS_SHA256[fname]:
+            sys.exit(f"{fname}: unexpected SHA-256 {hashlib.sha256(raw).hexdigest()}")
+        for line in raw.decode("utf-8").splitlines(keepends=True):
             if line.startswith("# Cartesian Tolerance:"):
                 tol = line
             if line.startswith("#") or not line.strip():
