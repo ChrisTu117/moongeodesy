@@ -21,11 +21,20 @@ Ellipsoids: a = 6378137 m, oblate f = 1/298.257223563, 0.05, 0.1, 0.2, 0.3,
 0.5 and prolate f = -0.05, -0.1, -0.2, -0.3, -0.5. Distances are fractions of
 each ellipsoid's quarter meridian Q, so the cases scale with the shape.
 
+--check-ode also integrates the geodesic equations directly in latitude,
+longitude and azimuth (classical RK4 in double precision, 200 000 steps, no
+auxiliary sphere) for 15 cases from f = -0.5 to 0.5 and requires agreement
+with the quadrature to 1e-10 deg. It checks the formulas, not the digits,
+and takes a few minutes.
+
 Usage (from the repository root):
   pip install mpmath
   python3 tools/gen_exact_independent.py && moon fmt
+  python3 tools/gen_exact_independent.py --check-ode
 """
+import math
 import random
+import sys
 
 import mpmath as mp
 
@@ -69,7 +78,51 @@ INVERSE = [
 ]
 
 
+def rk4_direct(a, f, lat1, lon1, azi1, s12, n=200000):
+    """Integrate dphi/ds = cos(alpha)/M, dlambda/ds = sin(alpha)/(N cos phi),
+    dalpha/ds = sin(alpha) tan(phi)/N with classical RK4 (doubles)."""
+    e2 = f * (2 - f)
+
+    def F(y):
+        sp, cp = math.sin(y[0]), math.cos(y[0])
+        w = 1 - e2 * sp * sp
+        M = a * (1 - e2) / w ** 1.5
+        N = a / math.sqrt(w)
+        return (math.cos(y[2]) / M, math.sin(y[2]) / (N * cp), math.sin(y[2]) * sp / (N * cp))
+
+    y = (math.radians(lat1), math.radians(lon1), math.radians(azi1))
+    h = s12 / n
+    for _ in range(n):
+        k1 = F(y)
+        k2 = F(tuple(y[i] + h / 2 * k1[i] for i in range(3)))
+        k3 = F(tuple(y[i] + h / 2 * k2[i] for i in range(3)))
+        k4 = F(tuple(y[i] + h * k3[i] for i in range(3)))
+        y = tuple(y[i] + h / 6 * (k1[i] + 2 * k2[i] + 2 * k3[i] + k4[i]) for i in range(3))
+    return tuple(math.degrees(v) for v in y)
+
+
+def check_ode():
+    worst = 0.0
+    for f in (0.5, 0.2, 1 / 298.257223563, -0.2, -0.5):
+        E = G.Ellipsoid(A, f)
+        Q = float(E.quarter_meridian())
+        for lat1, lon1, azi1, k in ((10.0, 20.0, 123.0, 0.8), (-33.0, 151.0, 270.0, 0.5),
+                                    (40.6, -73.8, 45.0, 1.0)):
+            d = E.geod_direct(lat1, lon1, azi1, k * Q, area=False)
+            o = rk4_direct(A, f, lat1, lon1, azi1, k * Q)
+            dz = abs(float(d["azi2"]) - o[2]) % 360
+            errs = (abs(float(d["lat2"]) - o[0]), abs(float(d["lon2_unrolled"]) - o[1]),
+                    min(dz, 360 - dz))
+            worst = max(worst, *errs)
+            print("f=%.4f %s: dlat %.1e, dlon %.1e, dazi %.1e deg" % ((f, (lat1, lon1, azi1, k)) + errs))
+    print("largest difference %.1e deg" % worst)
+    assert worst < 1e-10
+
+
 def main():
+    if "--check-ode" in sys.argv:
+        check_ode()
+        return
     rnd = random.Random(20261112)
     rows = []
     n_dir = n_inv = 0

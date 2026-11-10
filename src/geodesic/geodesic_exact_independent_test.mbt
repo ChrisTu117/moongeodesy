@@ -55,6 +55,8 @@ test "GeodesicExact direct matches mpmath quadrature, f from -0.5 to 0.5" {
     "exact direct vs mpmath: n=\{n} max position err m=\{dp} max |dazi2| deg=\{da} max |dS12|/area=\{dS}; within 1 deg of a pole: |dazi2| deg=\{da_pole} |dS12|/area=\{dS_pole}",
   )
   assert_eq(n, 209)
+  // README: oblate f up to 0.5, prolate down to -0.5
+  assert_true(exact_indep_f.contains(0.5) && exact_indep_f.contains(-0.5))
   assert_true(dp < 2.5e-8) // README: position < 25 nm
   assert_true(da < 1.0e-12) // README: azi2 < 1e-12 deg
   assert_true(dS < 1.0e-15) // README: area < 1e-15 of the ellipsoid

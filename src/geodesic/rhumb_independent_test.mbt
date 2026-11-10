@@ -121,8 +121,8 @@ test "rhumb direct matches independent mpmath formulas" {
   assert_eq(n, 179)
   assert_eq(n_pole, 37)
   assert_true(dp < 1.1e-8) // README: position < 11 nm
-  assert_true(dS < 5.0e-15) // README: area < 5e-15 of the ellipsoid
+  assert_true(dS < 2.0e-16) // README: area < 2e-16 of the ellipsoid
   assert_eq(n_near, 19)
   assert_true(near_pos < 1.1e-8) // README: near a pole, 11 nm + 4e-13 s12
-  assert_true(near_S < 4.0e-13) // README: area 4e-13 of the area swept
+  assert_true(near_S < 4.0e-13) // README: area 4e-13 of the area swept or ellipsoid
 }
