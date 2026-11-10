@@ -25,17 +25,21 @@ fn usage() -> String {
     #|  coord bd2gcj <lat> <lon>
     #|  coord wgs2bd <lat> <lon>
     #|  coord bd2wgs <lat> <lon>
+    #|  mag <lat> <lon> <date> [h]
     #|
     #|geod / rhumb / intersect / enu use the WGS-84 ellipsoid.
     #|Distances and ENU offsets are metres. Angles are degrees. Heights are
     #|ellipsoidal metres (default 0 for enu forward).
     #|coord converts one point. gcj2wgs, bd2gcj, and bd2wgs are exact inverses.
+    #|mag evaluates the World Magnetic Model 2025; <date> is YYYY-MM-DD or a
+    #|decimal year in 2025.0..2030.0, h is metres above the ellipsoid.
     #|
     #|  moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
     #|  moon run src/examples/cli -- rhumb inverse 51.4778 -0.0015 35.6762 139.6503
     #|  moon run src/examples/cli -- intersect closest 0 0 45 45 10 135
     #|  moon run src/examples/cli -- enu forward 39.9087 116.3975 39.9097 116.3985 50
     #|  moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
+    #|  moon run src/examples/cli -- mag 39.9087 116.3975 2026-11-10
   text
 }
 
@@ -112,6 +116,9 @@ fn execute(argv : Array[String]) -> Run {
   }
   if args[0] == "coord" {
     return execute_coord(args)
+  }
+  if args[0] == "mag" {
+    return execute_mag(rest_from(args, 1))
   }
   die("unknown command `\{args[0]}`")
 }
@@ -382,5 +389,52 @@ fn convert(op : String, lat : Double, lon : Double) -> String? {
       Some(coord_line(q.lat, q.lon))
     }
     _ => None
+  }
+}
+
+///|
+/// A date as YYYY-MM-DD, or a decimal year.
+fn parse_date(token : String) -> Double? {
+  let parts = token.split("-").collect()
+  if parts.length() == 3 {
+    let ymd = parts.map(fn(p) { @string.parse_int(p) catch { _ => -1 } })
+    if ymd[0] < 0 || ymd[1] < 0 || ymd[2] < 0 {
+      return None
+    }
+    return Some(@magnetic.decimal_year(ymd[0], ymd[1], ymd[2])) catch {
+      _ => None
+    }
+  }
+  parse_num(token)
+}
+
+///|
+fn execute_mag(tokens : Array[String]) -> Run {
+  if tokens.length() != 3 && tokens.length() != 4 {
+    return die("mag needs <lat> <lon> <date> [h]")
+  }
+  let h_tok = if tokens.length() == 4 { tokens[3] } else { "0" }
+  let year = match parse_date(tokens[2]) {
+    Some(y) => y
+    None => return die("not a date: `\{tokens[2]}`")
+  }
+  match (parse_num(tokens[0]), parse_num(tokens[1]), parse_num(h_tok)) {
+    (Some(lat), Some(lon), Some(h)) => {
+      let e = @magnetic.MagneticModel::wmm2025().field(lat, lon, h, year) catch {
+        err => return die("mag failed: \{err.to_repr()}")
+      }
+      let zone = match e.zone() {
+        Normal => "normal"
+        Caution => "caution (H < 6000 nT)"
+        Blackout => "blackout (H < 2000 nT): compass unreliable"
+      }
+      Ok(
+        "declination_deg: \{e.decl}\ninclination_deg: \{e.incl}\n" +
+        "declination_rate_deg_per_yr: \{e.decl_dot}\n" +
+        "x_nt: \{e.x}\ny_nt: \{e.y}\nz_nt: \{e.z}\nh_nt: \{e.h}\nf_nt: \{e.f}\n" +
+        "compass: \{zone}",
+      )
+    }
+    _ => die("not a number: `\{bad_token([tokens[0], tokens[1], h_tok])}`")
   }
 }
