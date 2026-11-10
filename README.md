@@ -170,12 +170,19 @@ Every area is checked against reference data that does not come from this
 MoonBit code: official test data (Karney's GeodTest, NOAA's WMM test values,
 IOGP GIGS, EPSG and Snyder worked examples), other implementations (PROJ, NGA
 GeoTrans, `coord-convert`, GeoNames for the China boundary), and 40–50-digit
-`mpmath` evaluations of textbook formulas. For the parts ported from
-GeographicLib (rhumb lines, intersections, `GeodesicExact`, polygon area) the
-references are GeographicLib's own C++ tools and Python package, which run the
-same algorithms independently of this port. `moon test --target all` runs
-every test on all four backends. Each bound below is the one the test
-asserts; the measured maximum is in brackets.
+`mpmath` evaluations of textbook formulas. The parts ported from
+GeographicLib (rhumb lines, intersections, `GeodesicExact`, polygon area) are
+checked twice: against GeographicLib's own C++ tools and Python package, the
+code they were ported from, and against references that do not come from
+GeographicLib: textbook formulas and numerical quadrature in `mpmath` at 45
+digits, closed forms (octant, lunes, hemispheres, spherical triangles), and
+intersections whose answers follow from the geometry
+([`tools/mpgeod.py`](tools/mpgeod.py) and the `gen_*_independent.py`
+scripts). The independent comparisons show larger differences on long lines
+than the GeographicLib ones, because a port and its source make the same
+rounding errors. `moon test --target all` runs every test on all four
+backends. Each bound below is the one the test asserts; the measured maximum
+is in brackets.
 
 | Area | Reference | Asserted bound (measured) |
 | --- | --- | --- |
@@ -183,10 +190,15 @@ asserts; the measured maximum is in brackets.
 | Geodesic direct | same data set | position < 10 nm (8.6–9.2 nm, by backend) |
 | Geodesic inverse/direct | 2,020 cases vs Python `geographiclib` 2.1 | relative difference < 1e-11 |
 | GeodesicExact | 111 cases vs GeographicLib 2.5 `GeodSolve -E`, oblate `f` up to 0.5, prolate down to −0.2 | distance < 8 nm (7.5 nm); position < 1e-13°, about 11 nm (6.3 nm) |
+| GeodesicExact | 209 direct and 165 inverse cases vs `mpmath` quadrature of the distance and longitude integrals (not GeographicLib), oblate `f` up to 0.5, prolate down to −0.5 | direct position < 25 nm (20.5 nm, on a 30 000 km line), azi2 < 1e-12° (1.7e-13°); inverse distance < 20 nm (15.6 nm), azimuths < 10 nm at the far end (5.3 nm); area < 1e-15 of the ellipsoid (2.3e-16); within 1° of a pole, where a nanometre of position is a large change in longitude, azi2 < 1e-10° (3.9e-11°) and area < 1e-13 (5.4e-14) |
 | Polygon area | 8 polygons (incl. pole-enclosing, antimeridian-crossing) vs `geographiclib` | < 1e-14 of the Earth's area |
+| Polygon area | 41 polygons not from `geographiclib`: closed forms (octant, lunes, hemispheres) on WGS-84 and a prolate twin; 7 spherical triangles by L'Huilier's theorem; the 8 polygons above by Green's theorem with `mpmath` quadrature | < 2e-16 of the Earth's area (1.2e-16); perimeter < 5e-16 relative (3.3e-16) |
 | Rhumb inverse | 125 cases vs GeographicLib RhumbSolve 2.5 | distance < 4 nm (3.7 nm) |
 | Rhumb direct | 296 cases vs the same RhumbSolve | position < 11 nm (10.5 nm); area < 5e-15 of the ellipsoid |
+| Rhumb inverse | 303 cases vs `mpmath` textbook formulas (isometric latitude, meridian-arc quadrature, Green's theorem for the area), WGS-84 and a prolate twin | distance < 12 nm (11.2 nm); azimuth < 7 nm at the far end (6.2 nm); area < 2e-16 of the ellipsoid (1.2e-16) |
+| Rhumb direct | 179 cases vs the same formulas, 37 past a pole | position < 11 nm (7.4 nm); area < 2e-16 of the ellipsoid (1.2e-16); within 0.1° of a pole, where a line can circle the pole thousands of times, position < 11 nm + 4e-13 of the distance (1.8 µm after 20 000 km at 89.99°) and area < 4e-13 of the area swept or of the ellipsoid, whichever is larger (2.9e-13) |
 | Geodesic intersection | 139 cases (closest, offset, next, segment) vs GeographicLib IntersectTool 2.5; ties (two intersections equally close; 2–4 cases, depending on the backend's rounding) are compared by distance | \|Δx\|, \|Δy\| < 0.5 µm (0.45 µm); the curves meet to < 10 nm (7.9 nm) |
+| Geodesic intersection | 56 cases with answers that follow from the geometry (equator and meridians, two meridians at a pole, a geodesic's nodes on the equator, mirror-image pairs; WGS-84 and a prolate twin), lengths by `mpmath` quadrature | \|Δx\|, \|Δy\| < 10 nm (4.6 nm) |
 | Geocentric / LocalCartesian | 660 ECEF and 120 ENU cases (WGS-84, sphere, prolate, GRS80) vs 50-digit textbook formulas; 495 + 90 vs PROJ `cart` / `topocentric` | < 20 nm (7.5 nm) |
 | Transverse Mercator / UTM / UPS | 600 points vs PROJ 9 (pyproj), up to ~930 km from the central meridian | < 10 nm (5.5 nm) |
 | MGRS | 315 points vs NGA GeoTrans (`mgrs` package), precisions 0–5 | 315/315 identical strings |
@@ -315,8 +327,8 @@ smoke test.
 | --- | --- |
 | Library code (`geodesic`, `utm`, `conic`, `magnetic`, `cn`, `internal`) | ~9 300 |
 | Generated data inside the library (China boundary, WMM2025 coefficients) | ~3 500 |
-| Hand-written tests | ~3 600 |
-| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~43 500 |
+| Hand-written tests | ~4 000 |
+| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~47 100 |
 | Package notes with checked examples (`README.mbt.md`) | ~860 |
 | Examples (demo, CLI, six scenarios) | ~1 800 |
 
@@ -379,7 +391,9 @@ and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
   GeodTest data, PROJ, NGA GeoTrans, `coord-convert`, GeoNames, NOAA's WMM
   test values, IOGP GIGS, EPSG and Snyder worked examples, 40–50-digit
   `mpmath` evaluations of textbook formulas, and, for the GeographicLib
-  ports, GeographicLib's own tools (table above). Every README statement has a test or check, listed in the
+  ports, both GeographicLib's own tools and references that do not come
+  from GeographicLib (`mpmath` quadrature, closed forms, known-answer cases;
+  table above). Every README statement has a test or check, listed in the
   acceptance checklist; CI runs everything on wasm, wasm-gc, js and native on
   Linux and macOS. The geodesic code needs a nearly correctly rounded `hypot` on very
   short lines; a named test checks two such lines against geographiclib.
@@ -422,7 +436,7 @@ MIT
 
 **moongeodesy** 是一个纯 MoonBit 实现的大地测量库，无 FFI，支持 wasm / wasm-gc / js / native 全部后端：
 
-- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（rhumb line）、两条测地线的交点，以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。级数解用于 `|f|` 约 1/50 以内（WGS-84 等）；`|f|` 更大时用 `GeodesicExact`（椭圆积分）。官方 GeodTest 测试集上反算距离误差 < 8 nm、正算位置误差 < 10 nm；恒向线与 RhumbSolve 2.5 对照，反算 < 4 nm、正算 < 11 nm；交点与 IntersectTool 2.5 对照 < 0.5 µm；ECEF 与局部 ENU 与 50 位精度的教科书公式及 PROJ 对照 < 20 nm。
+- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（rhumb line）、两条测地线的交点，以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。级数解用于 `|f|` 约 1/50 以内（WGS-84 等）；`|f|` 更大时用 `GeodesicExact`（椭圆积分）。官方 GeodTest 测试集上反算距离误差 < 8 nm、正算位置误差 < 10 nm；恒向线与 RhumbSolve 2.5 对照，反算 < 4 nm、正算 < 11 nm，与 mpmath 教科书公式对照，反算 < 12 nm、正算 < 11 nm（离极点 0.1° 以内另加行程的 4e-13）；交点与 IntersectTool 2.5 对照 < 0.5 µm，与有几何解的特殊情形对照 < 10 nm；GeodesicExact 与 mpmath 数值积分对照（扁率 −0.5 到 0.5），正算位置 < 25 nm、反算距离 < 20 nm；ECEF 与局部 ENU 与 50 位精度的教科书公式及 PROJ 对照 < 20 nm。
 - **`utm`**：横轴墨卡托投影（Krüger 6 阶级数）、极球面投影、UTM/UPS 坐标（含挪威、斯瓦尔巴特特殊分带）以及 MGRS 军事格网参考系的编码与解码。与 PROJ 结果相差 < 10 nm，MGRS 字符串与 NGA GeoTrans 完全一致。
 - **`conic`**（11 月新增）：兰勃特等角圆锥投影和阿尔伯斯等积圆锥投影，单/双标准纬线，任意椭球，带 EPSG 假原点的格网（如 CGCS2000、25°N/47°N、中央经线 105°E 的全国 Albers 等积投影，用于面积统计）。与 50 位精度的 EPSG/Snyder 公式对照 < 25 nm，与 PROJ 对照 < 0.25 µm（两条标准纬线只差 1e-4° 时 PROJ 自身的公式丢失有效数字，差 6 mm），并通过 IOGP GIGS 官方测试（容差 3–5 cm，实际差 1–5 mm，与 PROJ 相同）。
 - **`magnetic`**（11 月新增）：世界地磁模型 WMM2025，给出任意地点和日期的磁偏角、磁倾角、磁场分量及年变化率，罗盘方位与真方位、格网方位互换，以及磁极附近罗盘不可用的“禁用区/警告区”判断。与 NOAA 官方 100 个测试点、技术报告逐步算例对照，并与一个独立的 40 位精度实现对照 < 1e-10 nT。
@@ -444,7 +458,7 @@ let wmm = @magnetic.MagneticModel::wmm2025()
 let mag = wmm.field(39.9087, 116.3975, 0.0, 2026.86) // 北京磁偏角 mag.decl ≈ -7.56°（偏西）
 ```
 
-所有结果都与不来自本库代码的参考数据交叉验证：Karney 官方测试数据、PROJ、GeoTrans、coord-convert、GeoNames、NOAA 官方测试值、IOGP GIGS、EPSG 与 Snyder 算例、mpmath 高精度计算；从 GeographicLib 移植的部分（恒向线、交点、GeodesicExact、多边形面积）用 GeographicLib 自己的命令行工具和 Python 包对照，它们与本库是同一套算法的独立实现。参考数据生成脚本见 `tools/`。README 里每条说法对应的测试见 [`docs/十一月验收清单.md`](docs/十一月验收清单.md)，11 月新增代码的中文说明见 [`docs/十一月新增功能说明.md`](docs/十一月新增功能说明.md)。
+所有结果都与不来自本库代码的参考数据交叉验证：Karney 官方测试数据、PROJ、GeoTrans、coord-convert、GeoNames、NOAA 官方测试值、IOGP GIGS、EPSG 与 Snyder 算例、mpmath 高精度计算；从 GeographicLib 移植的部分（恒向线、交点、GeodesicExact、多边形面积）对照两次：一次用 GeographicLib 自己的命令行工具和 Python 包，它们就是移植的来源；一次用不来自 GeographicLib 的参考数据，即 mpmath 45 位精度的教科书公式和数值积分、闭式解（八分之一椭球、月牙形、半球、球面三角形）以及答案可由几何推出的交点。参考数据生成脚本见 `tools/`。README 里每条说法对应的测试见 [`docs/十一月验收清单.md`](docs/十一月验收清单.md)，11 月新增代码的中文说明见 [`docs/十一月新增功能说明.md`](docs/十一月新增功能说明.md)。
 
 命令行示例在 `src/examples/cli`：
 
