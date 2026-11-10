@@ -75,10 +75,11 @@ fn ground_err(
 
 ///|
 test "matches a 50-digit evaluation of the EPSG / Snyder formulas" {
-  // tools/gen_conic.py: 16 projections (LCC 2SP and 1SP, Albers; China
+  // tools/gen_conic.py: 18 projections (LCC 2SP and 1SP, Albers; China
   // CGCS2000 and Krasovsky, US, Europe, Australia, southern hemisphere,
-  // parallels 1e-4 degrees apart, polar, near the equator, one parallel),
-  // 1592 points from 89°S to 89°N and up to 170° from the central meridian.
+  // parallels 1e-4 degrees apart, polar, near the equator, one parallel,
+  // a sphere), 1792 points from 89°S to 89°N and up to 170° from the
+  // central meridian.
   let mut dxy = 0.0
   let mut dgamma = 0.0
   let mut dk = 0.0
@@ -170,9 +171,10 @@ test "IOGP GIGS 5102, 5103, 5109" {
     println(
       "GIGS set \{i}: max |dE|,|dN| = \{de} m, max |dlat|,|dlon| = \{dl} deg",
     )
-    // The files give 2 or 3 decimals. The largest residual, 4.5 mm on
-    // GIGS-5109-09, is the same against PROJ: the file value is rounded to
-    // the centimetre.
+    // The files give 2 or 3 decimals. The residuals (up to 0.8 mm for
+    // Lambert, 4.5 mm on GIGS-5109-09 for Albers) are a little above that
+    // rounding, but PROJ shows the same differences at the same points, so
+    // they are in the GIGS values. GIGS itself allows 3-5 cm.
     let (etol, ltol) = if s[0].to_int() == 2 {
       (0.005, 7.0e-8)
     } else {
@@ -525,4 +527,132 @@ test "invalid parameters raise ConicError" {
   // A sphere and a prolate ellipsoid are accepted.
   ignore(@conic.AlbersEqualArea::new(6371000.0, 0.0, 30.0, 60.0))
   ignore(@conic.LambertConformalConic::new(6371000.0, -0.01, 30.0, 60.0))
+}
+
+///|
+test "Albers: poles round-trip exactly; near-pole points stay accurate" {
+  let a = 6378137.0
+  let f = 1.0 / 298.257223563
+  for
+    s in [
+      (25.0, 47.0, 105.0),
+      (-18.0, -36.0, 132.0),
+      (30.0, -30.0, 0.0),
+      (60.0, 85.0, 0.0),
+      (89.0, 89.0, 0.0),
+      (90.0, 90.0, 0.0),
+      (-90.0, -90.0, 0.0),
+    ] {
+    let p = @conic.AlbersEqualArea::new(a, f, s.0, s.1) catch {
+      e => abort("\{e.to_repr()}")
+    }
+    for pole in [90.0, -90.0] {
+      // The pole of a polar projection's far side is the outer circle; skip
+      // the azimuthal case's antipodal pole, which is a whole circle.
+      if (s.0 == 90.0 && pole < 0.0) || (s.0 == -90.0 && pole > 0.0) {
+        continue
+      }
+      for lon in [s.2, s.2 + 30.0, s.2 - 150.0] {
+        let fw = p.forward(s.2, pole, lon)
+        let back = p.reverse(s.2, fw.x, fw.y)
+        assert_eq(back.lat, pole)
+        // 1e-4 degree (11 m) from the pole the map still resolves latitude.
+        let near = if pole > 0.0 { pole - 1.0e-4 } else { pole + 1.0e-4 }
+        let g = p.forward(s.2, near, lon)
+        let b = p.reverse(s.2, g.x, g.y)
+        assert_true((b.lat - near).abs() < 1.0e-7)
+        // Within about 1e-6 degree of the pole the answer is the pole or
+        // close to it: never worse than 4e-6 degree (45 cm).
+        let close = if pole > 0.0 { pole - 1.0e-6 } else { pole + 1.0e-6 }
+        let c = p.forward(s.2, close, lon)
+        let d = p.reverse(s.2, c.x, c.y)
+        assert_true((d.lat - close).abs() < 4.0e-6)
+      }
+    }
+  }
+}
+
+///|
+test "Lambert: both poles round-trip; the far pole is at a huge distance" {
+  let lcc = @conic.LambertConformalConic::new(
+    6378137.0,
+    1.0 / 298.257223563,
+    25.0,
+    47.0,
+  ) catch {
+    e => abort("\{e.to_repr()}")
+  }
+  let apex = lcc.forward(105.0, 90.0, 130.0)
+  assert_eq(lcc.reverse(105.0, apex.x, apex.y).lat, 90.0)
+  let far = lcc.forward(105.0, -90.0, 130.0)
+  assert_true(@math.hypot(far.x, far.y) > 1.0e20)
+  assert_eq(lcc.reverse(105.0, far.x, far.y).lat, -90.0)
+}
+
+///|
+test "prolate ellipsoid: conformal and equal-area, measured with geodesics" {
+  // No reference implementation handles f < 0 here (PROJ does not), so
+  // check the defining properties with this library's geodesics, which are
+  // tested on prolate ellipsoids against GeodSolve.
+  let a = 6378137.0
+  let f = -0.01
+  let g = @geodesic.Geodesic::new(a, f)
+  let lcc = @conic.LambertConformalConic::new(a, f, 25.0, 47.0)
+  let aea = @conic.AlbersEqualArea::new(a, f, 25.0, 47.0)
+  for pt in [(20.0, 100.0), (36.0, 116.0), (50.0, 80.0)] {
+    let p = lcc.forward(105.0, pt.0, pt.1)
+    for d in [(1.0e-4, 0.0), (0.0, 1.0e-4), (1.0e-4, 1.0e-4)] {
+      let q = lcc.forward(105.0, pt.0 + d.0, pt.1 + d.1)
+      let grid = @math.hypot(q.x - p.x, q.y - p.y)
+      let ground = g.inverse(pt.0, pt.1, pt.0 + d.0, pt.1 + d.1).s12
+      let mid = lcc.forward(105.0, pt.0 + d.0 / 2.0, pt.1 + d.1 / 2.0)
+      assert_true((grid / ground - mid.k).abs() < 1.0e-9)
+    }
+    let back = lcc.reverse(105.0, p.x, p.y)
+    assert_true((back.lat - pt.0).abs() < 1.0e-12)
+    let r = aea.forward(105.0, pt.0, pt.1)
+    let rb = aea.reverse(105.0, r.x, r.y)
+    assert_true(
+      (rb.lat - pt.0).abs() < 1.0e-12 && (rb.lon - pt.1).abs() < 1.0e-12,
+    )
+  }
+  // Equal area: a 10° x 10° box, edges sampled every 0.01°.
+  let ring : Array[(Double, Double)] = []
+  for i in 0..<1000 {
+    ring.push((30.0, 100.0 + i.to_double() * 0.01))
+  }
+  for i in 0..<1000 {
+    ring.push((30.0 + i.to_double() * 0.01, 110.0))
+  }
+  for i in 0..<1000 {
+    ring.push((40.0, 110.0 - i.to_double() * 0.01))
+  }
+  for i in 0..<1000 {
+    ring.push((40.0 - i.to_double() * 0.01, 100.0))
+  }
+  let exact = g.polygon_area(ring).area.abs()
+  let mut s = 0.0
+  for i in 0..<ring.length() {
+    let p = aea.forward(105.0, ring[i].0, ring[i].1)
+    let q = aea.forward(
+      105.0,
+      ring[(i + 1) % ring.length()].0,
+      ring[(i + 1) % ring.length()].1,
+    )
+    s = s + (p.x * q.y - q.x * p.y)
+  }
+  assert_true(((s.abs() / 2.0 - exact) / exact).abs() < 1.0e-6)
+}
+
+///|
+test "latitudes beyond 90 degrees give NaN" {
+  let a = 6378137.0
+  let f = 1.0 / 298.257223563
+  let lcc = @conic.LambertConformalConic::new(a, f, 25.0, 47.0)
+  let aea = @conic.AlbersEqualArea::new(a, f, 25.0, 47.0)
+  for lat in [90.5, -91.0, @double.not_a_number] {
+    let p = lcc.forward(105.0, lat, 110.0)
+    let q = aea.forward(105.0, lat, 110.0)
+    assert_true(p.x.is_nan() && p.y.is_nan() && q.x.is_nan() && q.y.is_nan())
+  }
 }

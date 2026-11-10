@@ -24,8 +24,10 @@ fn ang_err(a : Double, b : Double) -> Double {
 ///|
 test "WMM2025 matches the 100 official double-precision test values" {
   let wmm = @magnetic.MagneticModel::wmm2025()
-  let dyz = [] // Y, Z (nT)
+  let dy = [] // Y (nT)
+  let dz = [] // Z (nT)
   let dxhf = [] // X, H, F (nT)
+  let dx_equator = [] // X on the equator (nT)
   let drate = [] // dX/dt ... dF/dt (nT/yr)
   let dang = [] // D, I (deg), printed to 2 decimals
   let dangrate = [] // dD/dt, dI/dt (deg/yr)
@@ -33,8 +35,11 @@ test "WMM2025 matches the 100 official double-precision test values" {
     let e = wmm.field(row[2], row[3], row[1] * 1000.0, row[0])
     dxhf.push(e.h - row[6])
     dxhf.push(e.x - row[7])
-    dyz.push(e.y - row[8])
-    dyz.push(e.z - row[9])
+    dy.push(e.y - row[8])
+    dz.push(e.z - row[9])
+    if row[2] == 0.0 {
+      dx_equator.push(e.x - row[7])
+    }
     dxhf.push(e.f - row[10])
     dang.push(ang_err(e.decl, row[4]))
     dang.push(e.incl - row[5])
@@ -47,16 +52,21 @@ test "WMM2025 matches the 100 official double-precision test values" {
     drate.push(e.fdot - row[17])
   }
   println(
-    "WMM2025 vs 100 official values: max |dY|,|dZ| = \{max_abs(dyz)} nT, max |dX|,|dH|,|dF| = \{max_abs(dxhf)} nT, max |d rate| = \{max_abs(drate)} nT/yr, max |dD|,|dI| = \{max_abs(dang)} deg, max |dD/dt|,|dI/dt| = \{max_abs(dangrate)} deg/yr",
+    "WMM2025 vs 100 official values: max |dY| = \{max_abs(dy)} nT, max |dZ| = \{max_abs(dz)} nT, max |dX|,|dH|,|dF| = \{max_abs(dxhf)} nT, max |d rate| = \{max_abs(drate)} nT/yr, max |dD|,|dI| = \{max_abs(dang)} deg, max |dD/dt|,|dI/dt| = \{max_abs(dangrate)} deg/yr",
   )
   // The file has 6 decimals (half a unit is 5e-7). Y and Z agree to that
   // rounding plus a few units of double rounding.
-  assert_true(max_abs(dyz) < 2.5e-6)
-  // X (and so H and F) differ by up to 7.2e-4 nT, 1.3e-8 of the field. The
-  // independent 40-digit evaluation below reproduces our X, not the file's,
-  // and the file agrees with both on the equator, so the difference is in
-  // the file. It is far below the 0.1 nT the report quotes for
-  // single-precision software and the model's ~100 nT accuracy.
+  // The file has 6 decimals: half a unit is 5e-7. Y agrees to that.
+  assert_true(max_abs(dy) <= 5.1e-7)
+  // Z differs by up to 2.2e-6 nT and X (so H and F) by up to 7.2e-4 nT
+  // (1.3e-8 of the field). The independent 40-digit evaluation below gives
+  // our values, not the file's, in both components; on the equator, where
+  // the geocentric and geodetic frames coincide, X agrees to the rounding.
+  // So the differences are in the file. They are far below the 0.1 nT the
+  // report quotes for single-precision software and the model's ~100 nT
+  // accuracy.
+  assert_true(max_abs(dz) < 2.5e-6)
+  assert_true(dx_equator.length() == 2 && max_abs(dx_equator) <= 5.1e-7)
   assert_true(max_abs(dxhf) < 1.0e-3)
   assert_true(max_abs(drate) < 2.0e-6)
   assert_true(max_abs(dangrate) <= 5.1e-7)
@@ -365,4 +375,16 @@ test "bearing conversions" {
   }
   assert_eq(@magnetic.grivation(10.0, -175.0), -175.0)
   assert_eq(@magnetic.grivation(10.0, -170.0), -180.0)
+}
+
+///|
+test "compass zones switch exactly at 2000 nT and 6000 nT" {
+  let e = @magnetic.MagneticModel::wmm2025().field(
+    39.9087, 116.3975, 0.0, 2026.0,
+  )
+  let at = (h : Double) => { ..e, h, }.zone()
+  assert_eq(at(1999.999), @magnetic.Blackout)
+  assert_eq(at(2000.0), @magnetic.Caution)
+  assert_eq(at(5999.999), @magnetic.Caution)
+  assert_eq(at(6000.0), @magnetic.Normal)
 }

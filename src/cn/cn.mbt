@@ -68,49 +68,52 @@ pub fn out_of_china_bbox(lat : Double, lon : Double) -> Bool {
 
 ///|
 /// Returns true where GCJ-02 equals WGS-84: outside the bounding box (see
-/// `out_of_china_bbox`), or on the land of another country inside it.
-/// China, including Hong Kong, Macau and Taiwan, and the sea inside the box
+/// `out_of_china_bbox`), on the land of another country inside it, or in the
+/// sea within about 9 km of a foreign coast. China, including Hong Kong,
+/// Macau and Taiwan, its coastal waters, and the open sea inside the box
 /// return false, so GCJ-02 is applied there.
-/// Country borders come from Natural Earth 1:10m admin-0, China point of view
-/// (public domain), simplified to about 1 km near China. Within about 2 km
-/// of a land border the answer may fall on either side.
+/// The foreign region comes from Natural Earth 1:10m countries (China point of
+/// view) and minor islands (public domain), simplified to about 1 km. Within
+/// about 2 km of China's land border the answer may fall on either side.
 pub fn out_of_china(lat : Double, lon : Double) -> Bool {
   out_of_china_bbox(lat, lon) || on_foreign_land(lat, lon)
 }
 
 ///|
-/// True when (lat, lon) lies inside one of the foreign land rings in
-/// `boundary_data.mbt` (even-odd rule).
+/// True when (lat, lon) is in the foreign region of `boundary_data.mbt`: the
+/// 1-degree cell is either all foreign, or the point is inside its rings by
+/// the even-odd rule (rings include holes).
 fn on_foreign_land(lat : Double, lon : Double) -> Bool {
-  let rings = foreign_ring_start.length() - 1
-  for r in 0..<rings {
-    let b = 4 * r
-    if lon < foreign_ring_bbox[b] ||
-      lat < foreign_ring_bbox[b + 1] ||
-      lon > foreign_ring_bbox[b + 2] ||
-      lat > foreign_ring_bbox[b + 3] {
-      continue
-    }
-    let start = foreign_ring_start[r]
-    let end = foreign_ring_start[r + 1]
-    let mut inside = false
-    let mut j = end - 1
-    for i in start..<end {
-      let xi = foreign_xy[2 * i]
-      let yi = foreign_xy[2 * i + 1]
-      let xj = foreign_xy[2 * j]
-      let yj = foreign_xy[2 * j + 1]
-      if (yi > lat) != (yj > lat) &&
-        lon < xj + (lat - yj) * (xi - xj) / (yi - yj) {
-        inside = !inside
+  let i = (lon - cell_lon0).floor().to_int()
+  let j = (lat - cell_lat0).floor().to_int()
+  if i < 0 || i >= cell_cols || j < 0 || j >= cell_rows {
+    return false
+  }
+  let k = j * cell_cols + i
+  match cell_kind[k] {
+    0 => false
+    1 => true
+    _ => {
+      let mut inside = false
+      for r in cell_ring_start[k]..<cell_ring_start[k + 1] {
+        let start = ring_start[r]
+        let end = ring_start[r + 1]
+        let mut q = end - 1
+        for p in start..<end {
+          let xp = foreign_xy[2 * p]
+          let yp = foreign_xy[2 * p + 1]
+          let xq = foreign_xy[2 * q]
+          let yq = foreign_xy[2 * q + 1]
+          if (yp > lat) != (yq > lat) &&
+            lon < xq + (lat - yq) * (xp - xq) / (yp - yq) {
+            inside = !inside
+          }
+          q = p
+        }
       }
-      j = i
-    }
-    if inside {
-      return true
+      inside
     }
   }
-  false
 }
 
 ///|

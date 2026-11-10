@@ -166,10 +166,16 @@ moon doc --serve
 
 ## Accuracy and testing
 
-Everything is checked against reference data that does not come from the
-code we port, and `moon test --target all` runs every test on all four
-backends. Each bound below is the one the test asserts; the measured maximum
-is in brackets.
+Every area is checked against reference data that does not come from this
+MoonBit code: official test data (Karney's GeodTest, NOAA's WMM test values,
+IOGP GIGS, EPSG and Snyder worked examples), other implementations (PROJ, NGA
+GeoTrans, `coord-convert`, GeoNames for the China boundary), and 40–50-digit
+`mpmath` evaluations of textbook formulas. For the parts ported from
+GeographicLib (rhumb lines, intersections, `GeodesicExact`, polygon area) the
+references are GeographicLib's own C++ tools and Python package, which run the
+same algorithms independently of this port. `moon test --target all` runs
+every test on all four backends. Each bound below is the one the test
+asserts; the measured maximum is in brackets.
 
 | Area | Reference | Asserted bound (measured) |
 | --- | --- | --- |
@@ -180,17 +186,20 @@ is in brackets.
 | Polygon area | 8 polygons (incl. pole-enclosing, antimeridian-crossing) vs `geographiclib` | < 1e-14 of the Earth's area |
 | Rhumb inverse | 125 cases vs GeographicLib RhumbSolve 2.5 | distance < 4 nm (3.7 nm) |
 | Rhumb direct | 296 cases vs the same RhumbSolve | position < 11 nm (10.5 nm); area < 5e-15 of the ellipsoid |
-| Geodesic intersection | 139 cases (closest, offset, next, segment) vs GeographicLib IntersectTool 2.5; 2 ties compared by distance | \|Δx\|, \|Δy\| < 0.5 µm (0.45 µm); the curves meet to < 10 nm (7.9 nm) |
+| Geodesic intersection | 139 cases (closest, offset, next, segment) vs GeographicLib IntersectTool 2.5; ties (two intersections equally close; 2–4 cases, depending on the backend's rounding) are compared by distance | \|Δx\|, \|Δy\| < 0.5 µm (0.45 µm); the curves meet to < 10 nm (7.9 nm) |
 | Geocentric / LocalCartesian | 660 ECEF and 120 ENU cases (WGS-84, sphere, prolate, GRS80) vs 50-digit textbook formulas; 495 + 90 vs PROJ `cart` / `topocentric` | < 20 nm (7.5 nm) |
 | Transverse Mercator / UTM / UPS | 600 points vs PROJ 9 (pyproj), up to ~930 km from the central meridian | < 10 nm (5.5 nm) |
 | MGRS | 315 points vs NGA GeoTrans (`mgrs` package), precisions 0–5 | 315/315 identical strings |
-| Lambert / Albers conic | 1592 points on 16 projections vs 50-digit evaluation of the EPSG GN 7-2 / Snyder formulas; PROJ 9.5; IOGP GIGS 5102/5103/5109; EPSG and Snyder worked examples | < 25 nm (19 nm); PROJ < 0.25 µm; GIGS within the files' rounding |
-| WMM2025 | NOAA's 100 official double-precision test points; report Tables 3b, 3d, 6; 119 points vs an independent 40-digit evaluation | Y, Z < 2.5e-6 nT; X, H, F < 1e-3 nT (7.2e-4, see [notes](src/magnetic/README.mbt.md)); worked example to 10 decimals; independent < 1e-10 nT |
-| GCJ-02 / BD-09 | 200 points vs `coord-convert`: GCJ-02 on the 141 inside China (the 59 on foreign land are left unchanged by design), BD-09 on all 200 | < 1e-11° |
+| Lambert / Albers conic | 1792 points on 18 projections (oblate and a sphere) vs 50-digit evaluation of the EPSG GN 7-2 / Snyder formulas; PROJ 9.5; IOGP GIGS 5102/5103/5109; EPSG and Snyder worked examples | < 25 nm (19 nm); PROJ < 0.25 µm, except 6 mm on parallels 1e-4° apart, where PROJ's own formula loses digits; GIGS < 1 mm (Lambert) and < 5 mm (Albers), the same differences PROJ shows (GIGS allows 3–5 cm) |
+| WMM2025 | NOAA's 100 official double-precision test points; report Tables 3b, 3d, 6; 119 points vs an independent 40-digit evaluation | Y within the file's rounding; Z < 2.5e-6 nT and X, H, F < 1e-3 nT (7.2e-4), differences that the independent evaluation shows are in the file (see [notes](src/magnetic/README.mbt.md)); worked example to 10 decimals; independent < 1e-10 nT |
+| GCJ-02 / BD-09 | 200 points vs `coord-convert`: GCJ-02 on the 140 inside China (the other 60 are foreign and left unchanged by design), BD-09 on all 200 | < 1e-11° |
+| China / foreign boundary | every GeoNames town of 5000+ people in the GCJ-02 box (CC BY 4.0), except 39 within 3 km of China's land border and 11 disputed | 12 115 foreign towns not offset; 3 234 towns in China, Hong Kong, Macau, Taiwan offset; 3 known exceptions (islets missing from Natural Earth) |
 
-Every reference data set has a generator in [`tools/`](tools/) (Python;
-each script names its source, and the WMM, GeodTest-for-s3 and China-border
-scripts check the SHA-256 of the downloaded files). The checklist that maps each README statement to its test is
+Every reference data set has a generator in
+[`tools/`](https://github.com/ChrisTu117/moongeodesy/tree/main/tools) (Python;
+each script names its source, and the scripts that read downloaded files
+check their SHA-256, except GeoNames, which changes daily and is recorded
+by hash in the test file). The checklist that maps each README statement to its test is
 [`docs/十一月验收清单.md`](docs/十一月验收清单.md).
 
 Output of [`s3_accuracy`](src/examples/s3_accuracy/main.mbt) (200 cases of
@@ -208,11 +217,16 @@ above 8 nm):
 
 - GCJ-02 is the published reverse-engineered algorithm used by most open-source
   libraries (Krasovsky ellipsoid, a = 6378245 m). The transform is the
-  identity outside the usual China bounding box and on the land of other
-  countries inside it (Seoul, Hanoi, ...), using Natural Earth 1:10m borders
-  (China point of view). Open-source implementations are reported to agree
-  with the official, unpublished cipher to about 1 m; this library matches
-  them to 1e-11° but cannot check the official one.
+  identity outside the usual China bounding box, on the land of other
+  countries inside it (Seoul, Hanoi, Naha, Penang, ...), and in the sea
+  within about 9 km of their coasts, using Natural Earth 1:10m countries
+  (China point of view) and minor islands. Islets missing from Natural Earth
+  are treated as sea and offset; among GeoNames towns of 5000+ people there
+  are 3 such cases (Kiên Hải, Vietnam; Lipayran and Litayan, Philippines).
+  Within about 2 km of China's land border either answer is possible.
+  Open-source implementations are reported to agree with the official,
+  unpublished cipher to about 1 m; this library matches them to 1e-11° but
+  cannot check the official one.
 - The series geodesic (`Geodesic`) assumes `|f|` up to about 1/50 and the
   rhumb series about 1/150 (GeographicLib's guidance). `GeodesicExact` is the
   elliptic-integral solution for larger flattening, including prolate
@@ -247,8 +261,8 @@ smoke test.
 | geodesic inverse, nearly antipodal | 1.44 µs | 2.05 µs |
 | geodesic direct, 1 000 km | 0.45 µs | 1.01 µs |
 | polygon area, 4 vertices | 2.99 µs | 5.16 µs |
-| WGS-84 → GCJ-02 (with the border test) | 0.26 µs | 0.49 µs |
-| GCJ-02 → WGS-84 (exact, iterative) | 0.63 µs | 0.91 µs |
+| WGS-84 → GCJ-02 (with the border test) | 0.10 µs | 0.06 µs |
+| GCJ-02 → WGS-84 (exact, iterative) | 0.46 µs | 0.47 µs |
 | UTM from lat/lon | 0.64 µs | 0.52 µs |
 | MGRS encode (1 m) | 0.78 µs | 0.91 µs |
 | WMM2025 field, all elements and rates | 1.88 µs | 2.96 µs |
@@ -283,22 +297,26 @@ smoke test.
 - GCJ-02/BD-09 use the widely published reverse-engineered formulas (as in
   `coord-convert`, MIT); the iterative exact inverses are our own.
 - MGRS letter tables follow NGA's GeoTrans / GeographicLib `MGRS`.
-- The China border data is Natural Earth 1:10m (public domain).
-- Test data: GeodTest (Karney, CC0); IOGP GIGS test dataset 2.1 (© IOGP,
-  used under the [GIGS Terms of Use](https://gigs.iogp.org/TermsOfUse), in
+- The China border data is Natural Earth 1:10m countries and minor islands
+  (public domain).
+- Test data: GeodTest (Karney, CC0); GeoNames towns (CC BY 4.0, in
+  `src/cn/towns_data_test.mbt`); IOGP GIGS test dataset 2.1 (© IOGP, used
+  under the [GIGS Terms of Use](https://gigs.iogp.org/TermsOfUse), in
   `src/conic/gigs_data_test.mbt` only); the other vectors are generated by
   `tools/` with `geographiclib`, PROJ (`pyproj`), `mgrs`, `coord-convert`,
-  GeographicLib command-line tools, and `mpmath`.
-- This library is MIT licensed (see [LICENSE](LICENSE)).
+  GeographicLib command-line tools, `shapely`, and `mpmath`.
+- This library is MIT licensed (see [LICENSE](LICENSE)). The notices that
+  third-party licences require, including GeographicLib's MIT notice, are
+  in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
 ## Code size
 
 | Part | Lines of MoonBit |
 | --- | --- |
-| Library code (`geodesic`, `utm`, `conic`, `magnetic`, `cn`, `internal`) | ~9 200 |
-| Generated data inside the library (China borders, WMM2025 coefficients) | ~1 600 |
-| Hand-written tests | ~3 200 |
-| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~38 000 |
+| Library code (`geodesic`, `utm`, `conic`, `magnetic`, `cn`, `internal`) | ~9 300 |
+| Generated data inside the library (China boundary, WMM2025 coefficients) | ~3 500 |
+| Hand-written tests | ~3 600 |
+| Generated reference data (`*_data_test.mbt`, `vectors_test.mbt`) | ~43 500 |
 | Package notes with checked examples (`README.mbt.md`) | ~860 |
 | Examples (demo, CLI, six scenarios) | ~1 800 |
 
@@ -318,6 +336,11 @@ area) is about 1.8k lines, `conic` about 1.4k and `magnetic` about 0.5k.
 - Lambert conformal conic and Albers equal-area projections, package
   `conic`, with CLI `lcc` / `albers` and scenario s6
   ([#35](https://github.com/ChrisTu117/moongeodesy/issues/35), [#36](https://github.com/ChrisTu117/moongeodesy/pull/36)).
+- Foreign coasts and islands inside the box are no longer offset either:
+  the boundary now uses Natural Earth minor islands and 9 km of coastal sea,
+  and is tested on every GeoNames town of 5000+ people. Also: Albers poles
+  round-trip exactly, and inverse conformal latitudes converge on prolate
+  ellipsoids (0.2.1).
 - Every README statement mapped to a test or check
   ([`docs/十一月验收清单.md`](docs/十一月验收清单.md)): independent
   reference data for Geocentric/LocalCartesian, assertions tightened to the
@@ -352,13 +375,13 @@ and [pull requests](https://github.com/ChrisTu117/moongeodesy/pulls?q=is%3Apr).
   and error handling. [`docs/十一月新增功能说明.md`](docs/十一月新增功能说明.md)
   explains the November code in Chinese.
 - **How correctness is verified.** Not by reading the AI's output, but by
-  reference data that does not share the ported code: Karney's official
-  GeodTest data, Python `geographiclib`, PROJ, NGA GeoTrans,
-  `coord-convert`, NOAA's WMM test values, IOGP GIGS, EPSG and Snyder worked
-  examples, and 40–50-digit `mpmath` evaluations of textbook formulas
-  (table above). Every README statement has a test or check, listed in the
+  reference data that does not come from this code: Karney's official
+  GeodTest data, PROJ, NGA GeoTrans, `coord-convert`, GeoNames, NOAA's WMM
+  test values, IOGP GIGS, EPSG and Snyder worked examples, 40–50-digit
+  `mpmath` evaluations of textbook formulas, and, for the GeographicLib
+  ports, GeographicLib's own tools (table above). Every README statement has a test or check, listed in the
   acceptance checklist; CI runs everything on wasm, wasm-gc, js and native on
-  Linux and macOS. The geodesic code needs a correctly rounded `hypot` on very
+  Linux and macOS. The geodesic code needs a nearly correctly rounded `hypot` on very
   short lines; a named test checks two such lines against geographiclib.
 
 ## Related MoonBit libraries
@@ -399,11 +422,11 @@ MIT
 
 **moongeodesy** 是一个纯 MoonBit 实现的大地测量库，无 FFI，支持 wasm / wasm-gc / js / native 全部后端：
 
-- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（rhumb line）、两条测地线的交点，以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。级数解用于 `|f|` 约 1/50 以内（WGS-84 等）；`|f|` 更大时用 `GeodesicExact`（椭圆积分）。官方 GeodTest 测试集上反算距离误差 < 8 nm、正算位置误差 < 10 nm；恒向线与 RhumbSolve 2.5 对照 < 4 nm；交点与 IntersectTool 2.5 对照 < 0.5 µm；ECEF 与局部 ENU 与 50 位精度的教科书公式及 PROJ 对照 < 20 nm。
+- **`geodesic`**：移植 GeographicLib 的 Karney 测地线算法——椭球面上两点的最短距离与方位角（反算）、给定方位与距离求终点（正算）、测地线插点（用于地图画航线）、任意多边形的椭球面面积与周长、恒向线（rhumb line）、两条测地线的交点，以及相对原点的局部东北天直角坐标（`LocalCartesian`，经地心地固 ECEF）。级数解用于 `|f|` 约 1/50 以内（WGS-84 等）；`|f|` 更大时用 `GeodesicExact`（椭圆积分）。官方 GeodTest 测试集上反算距离误差 < 8 nm、正算位置误差 < 10 nm；恒向线与 RhumbSolve 2.5 对照，反算 < 4 nm、正算 < 11 nm；交点与 IntersectTool 2.5 对照 < 0.5 µm；ECEF 与局部 ENU 与 50 位精度的教科书公式及 PROJ 对照 < 20 nm。
 - **`utm`**：横轴墨卡托投影（Krüger 6 阶级数）、极球面投影、UTM/UPS 坐标（含挪威、斯瓦尔巴特特殊分带）以及 MGRS 军事格网参考系的编码与解码。与 PROJ 结果相差 < 10 nm，MGRS 字符串与 NGA GeoTrans 完全一致。
-- **`conic`**（11 月新增）：兰勃特等角圆锥投影和阿尔伯斯等积圆锥投影，单/双标准纬线，任意椭球，带 EPSG 假原点的格网（如 CGCS2000、25°N/47°N、中央经线 105°E 的全国 Albers 等积投影，用于面积统计）。与 50 位精度的 EPSG/Snyder 公式对照 < 25 nm，与 PROJ 对照 < 0.25 µm，并通过 IOGP GIGS 官方测试。
+- **`conic`**（11 月新增）：兰勃特等角圆锥投影和阿尔伯斯等积圆锥投影，单/双标准纬线，任意椭球，带 EPSG 假原点的格网（如 CGCS2000、25°N/47°N、中央经线 105°E 的全国 Albers 等积投影，用于面积统计）。与 50 位精度的 EPSG/Snyder 公式对照 < 25 nm，与 PROJ 对照 < 0.25 µm（两条标准纬线只差 1e-4° 时 PROJ 自身的公式丢失有效数字，差 6 mm），并通过 IOGP GIGS 官方测试（容差 3–5 cm，实际差 1–5 mm，与 PROJ 相同）。
 - **`magnetic`**（11 月新增）：世界地磁模型 WMM2025，给出任意地点和日期的磁偏角、磁倾角、磁场分量及年变化率，罗盘方位与真方位、格网方位互换，以及磁极附近罗盘不可用的“禁用区/警告区”判断。与 NOAA 官方 100 个测试点、技术报告逐步算例对照，并与一个独立的 40 位精度实现对照 < 1e-10 nT。
-- **`cn`**：国内地图坐标系转换——WGS-84（GPS）↔ GCJ-02（高德、腾讯，"火星坐标"）↔ BD-09（百度），提供迭代精确逆转换（往返误差 < 1e-9°）以及常用的单步近似公式。国外（含首尔、河内等框内国家）坐标不做偏移。
+- **`cn`**：国内地图坐标系转换——WGS-84（GPS）↔ GCJ-02（高德、腾讯，"火星坐标"）↔ BD-09（百度），提供迭代精确逆转换（往返误差 < 1e-9°）以及常用的单步近似公式。框内其他国家的陆地（首尔、河内、那霸、槟城等）及其沿海约 9 公里内不做偏移；用 GeoNames 全部 5000 人以上城镇检验，只有 3 个位于 Natural Earth 未收录小岛上的城镇例外。
 
 ```moonbit
 let g = @geodesic.Geodesic::wgs84()
@@ -421,7 +444,7 @@ let wmm = @magnetic.MagneticModel::wmm2025()
 let mag = wmm.field(39.9087, 116.3975, 0.0, 2026.86) // 北京磁偏角 mag.decl ≈ -7.56°（偏西）
 ```
 
-所有结果都与不共享移植代码的参考数据交叉验证（Karney 官方测试数据、geographiclib、PROJ、GeoTrans、coord-convert、NOAA 官方测试值、IOGP GIGS、EPSG 与 Snyder 算例、mpmath 高精度计算）；参考数据生成脚本见 `tools/`。README 里每条说法对应的测试见 [`docs/十一月验收清单.md`](docs/十一月验收清单.md)，11 月新增代码的中文说明见 [`docs/十一月新增功能说明.md`](docs/十一月新增功能说明.md)。
+所有结果都与不来自本库代码的参考数据交叉验证：Karney 官方测试数据、PROJ、GeoTrans、coord-convert、GeoNames、NOAA 官方测试值、IOGP GIGS、EPSG 与 Snyder 算例、mpmath 高精度计算；从 GeographicLib 移植的部分（恒向线、交点、GeodesicExact、多边形面积）用 GeographicLib 自己的命令行工具和 Python 包对照，它们与本库是同一套算法的独立实现。参考数据生成脚本见 `tools/`。README 里每条说法对应的测试见 [`docs/十一月验收清单.md`](docs/十一月验收清单.md)，11 月新增代码的中文说明见 [`docs/十一月新增功能说明.md`](docs/十一月新增功能说明.md)。
 
 命令行示例在 `src/examples/cli`：
 
