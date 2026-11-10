@@ -12,8 +12,14 @@ mpmath.quad (tanh-sinh quadrature) at 40+ significant digits:
 * area between the equator and the parallel phi, per radian of longitude,
   A(phi) = integral of M(phi) N(phi) cos(phi) (closed form, checked against
   the quadrature in self_check());
-* the area under a curve by Green's theorem, S12 = integral of A(phi)
-  dlambda along it.
+* geodesics by Bessel's reduction to the auxiliary sphere (Helmert 1880,
+  ch. 5): s = b * integral sqrt(1 + k^2 sin^2 sigma), and
+  lambda = omega - f (2 - f) sin(alpha0) * integral d sigma /
+  (1 + (1 - f) sqrt(1 + k^2 sin^2 sigma)), both evaluated by quadrature;
+* the inverse geodesic by solving the same two integrals for the auxiliary
+  longitude (Vincenty's 1975 scheme, with the series replaced by quadrature);
+* the area under an edge by Green's theorem, S12 = integral of A(phi) dlambda
+  along the curve.
 
 None of GeographicLib's series, elliptic-integral or Fourier code is used.
 Inputs are taken as the exact binary value of the double the MoonBit test
@@ -29,7 +35,9 @@ PI = mp.pi
 
 
 def D(x):
-    """Exact value of the double nearest x."""
+    """Exact value of the double nearest x; an mpf is kept as it is."""
+    if isinstance(x, mp.mpf):
+        return x
     return mp.mpf(float(x))
 
 
@@ -233,6 +241,183 @@ class Ellipsoid:
         area = self.rhumb_area(phi1, phi2, lam12)
         lon2 = lon1 + deg(lam12) if unroll else wrap180(wrap180(lon1) + deg(lam12))
         return deg(phi2), lon2, area, deg(lam12)
+
+    # --- geodesics on the auxiliary sphere (Bessel / Helmert) ---
+
+    def _w(self, k2, sig):
+        return mp.sqrt(1 + k2 * mp.sin(sig) ** 2)
+
+    @staticmethod
+    def _splits(s1, s2):
+        """Interval [s1, s2] split at the vertices sigma = pi/2 + n pi."""
+        lo, hi = (s1, s2) if s1 <= s2 else (s2, s1)
+        pts = [lo]
+        n = mp.ceil((lo - PI / 2) / PI)
+        while True:
+            v = PI / 2 + n * PI
+            if v >= hi:
+                break
+            if v > lo:
+                pts.append(v)
+            n += 1
+        pts.append(hi)
+        return pts if s1 <= s2 else pts[::-1]
+
+    def _int(self, fn, s1, s2):
+        if s1 == s2:
+            return mp.mpf(0)
+        return quad(fn, self._splits(s1, s2))
+
+    def _dist_int(self, k2, s1, s2):
+        """b * integral_{s1}^{s2} sqrt(1 + k2 sin^2)."""
+        return self.b * self._int(lambda t: self._w(k2, t), s1, s2)
+
+    def _lam_int(self, k2, s1, s2):
+        """integral_{s1}^{s2} (2 - f) / (1 + (1 - f) sqrt(1 + k2 sin^2))."""
+        f = self.f
+        return self._int(lambda t: (2 - f) / (1 + (1 - f) * self._w(k2, t)), s1, s2)
+
+    def _omega(self, sa0, sig):
+        """Auxiliary-sphere longitude from the node, tan(omega) = sa0 tan(sigma),
+        continuous in sigma."""
+        if sa0 == 0:
+            # A meridian: omega jumps by pi at each pole.
+            return PI * mp.floor((sig + PI / 2) / PI)
+        s = abs(sa0)
+        d = mp.atan2(s * mp.sin(sig), mp.cos(sig)) - sig
+        d = d - 2 * PI * mp.nint(d / (2 * PI))
+        om = sig + d
+        return om if sa0 > 0 else -om
+
+    def _lat_azi(self, sa0, ca0, sig):
+        sbet = ca0 * mp.sin(sig)
+        cbet = mp.hypot(sa0, ca0 * mp.cos(sig))
+        phi = mp.atan2(sbet, (1 - self.f) * cbet)
+        alp = mp.atan2(sa0, ca0 * mp.cos(sig))
+        return phi, alp
+
+    def _area_int(self, sa0, ca0, k2, s1, s2):
+        """S12 = integral of A(phi) dlambda along the geodesic, with
+        dlambda/dsigma = sa0 [1 / cos^2 beta - f (2 - f) / (1 + (1 - f) w)]."""
+        if sa0 == 0:
+            # A meridian: no longitude change unless it passes a pole.
+            return mp.mpf(0) if len(self._splits(s1, s2)) == 2 else None
+        f = self.f
+
+        def integrand(t):
+            st = mp.sin(t)
+            sbet = ca0 * st
+            c2bet = 1 - sbet * sbet
+            sphi = sbet / mp.sqrt(sbet * sbet + (1 - f) ** 2 * c2bet)
+            w = mp.sqrt(1 + k2 * st * st)
+            dlam = sa0 * (1 / c2bet - f * (2 - f) / (1 + (1 - f) * w))
+            A = self.b ** 2 / 2 * (sphi / (1 - self.e2 * sphi * sphi) + self.atanhe_over_e(sphi))
+            return A * dlam
+
+        return self._int(integrand, s1, s2)
+
+    def _start(self, lat1, azi1):
+        phi1, alp1 = rad(lat1), rad(azi1)
+        sbet1 = (1 - self.f) * mp.sin(phi1)
+        cbet1 = mp.cos(phi1)
+        r = mp.hypot(sbet1, cbet1)
+        sbet1, cbet1 = sbet1 / r, cbet1 / r
+        salp1, calp1 = mp.sin(alp1), mp.cos(alp1)
+        if azi1 in (0, 180, -180):
+            salp1 = mp.mpf(0)
+        if azi1 in (90, -90):
+            calp1 = mp.mpf(0)
+        sa0 = salp1 * cbet1
+        ca0 = mp.hypot(calp1, salp1 * sbet1)
+        sig1 = mp.atan2(sbet1, calp1 * cbet1)
+        k2 = self.ep2 * ca0 * ca0
+        return sa0, ca0, sig1, k2
+
+    def geod_direct(self, lat1, lon1, azi1, s12, area=True):
+        """Direct geodesic problem by quadrature.
+
+        Returns dict with lat2, lon2 (reduced to (-180, 180]), azi2 (deg),
+        and S12 (m^2, None for a meridian).
+        """
+        lat1, lon1, azi1, s12 = D(lat1), D(lon1), D(azi1), D(s12)
+        assert abs(lat1) < 90
+        sa0, ca0, sig1, k2 = self._start(lat1, azi1)
+        # Solve b * int_{sig1}^{sig2} w = s12 for sig2 (Newton).
+        wbar = mp.sqrt(1 + k2 / 2)
+        sig2 = sig1 + s12 / (self.b * wbar)
+        for _ in range(200):
+            d = (self._dist_int(k2, sig1, sig2) - s12) / (self.b * self._w(k2, sig2))
+            sig2 -= d
+            if abs(d) < mp.mpf(10) ** (-mp.mp.dps + 4):
+                break
+        else:
+            raise ArithmeticError("geod_direct: sigma did not converge")
+        om12 = self._omega(sa0, sig2) - self._omega(sa0, sig1)
+        lam12 = om12 - self.f * sa0 * self._lam_int(k2, sig1, sig2)
+        phi2, alp2 = self._lat_azi(sa0, ca0, sig2)
+        S12 = self._area_int(sa0, ca0, k2, sig1, sig2) if area else None
+        return {
+            "lat2": deg(phi2),
+            "lon2": wrap180(lon1 + deg(lam12)),
+            "lon2_unrolled": lon1 + deg(lam12),
+            "azi2": deg(alp2),
+            "S12": S12,
+            "sig12": sig2 - sig1,
+        }
+
+    def geod_inverse(self, lat1, lon1, lat2, lon2):
+        """Inverse geodesic problem by quadrature: find the auxiliary-sphere
+        longitude omega12 for which the longitude integral gives lon2 - lon1
+        (secant iteration started from omega12 = lambda12), as in Vincenty's
+        1975 scheme but with exact integrals. Valid away from nearly
+        antipodal points (|lambda12| well below 180 deg).
+
+        Returns dict with s12, azi1, azi2 (deg), S12, lam12 (rad).
+        """
+        lat1, lon1, lat2, lon2 = D(lat1), D(lon1), D(lat2), D(lon2)
+        lam12 = rad(ang_diff(lon1, lon2))
+        f = self.f
+        phi1, phi2 = rad(lat1), rad(lat2)
+
+        def red(phi):
+            sb = (1 - f) * mp.sin(phi)
+            cb = mp.cos(phi)
+            r = mp.hypot(sb, cb)
+            return sb / r, cb / r
+
+        sbet1, cbet1 = red(phi1)
+        sbet2, cbet2 = red(phi2)
+
+        def geom(om):
+            som, com = mp.sin(om), mp.cos(om)
+            y = cbet2 * som
+            x = cbet1 * sbet2 - sbet1 * cbet2 * com
+            alp1 = mp.atan2(y, x)
+            salp1, calp1 = mp.sin(alp1), mp.cos(alp1)
+            sa0 = salp1 * cbet1
+            ca0 = mp.hypot(calp1, salp1 * sbet1)
+            sig1 = mp.atan2(sbet1, calp1 * cbet1)
+            sig12 = mp.atan2(mp.hypot(x, y), sbet1 * sbet2 + cbet1 * cbet2 * com)
+            k2 = self.ep2 * ca0 * ca0
+            return alp1, sa0, ca0, sig1, sig1 + sig12, k2
+
+        def F(om):
+            _, sa0, ca0, s1, s2, k2 = geom(om)
+            return om - f * sa0 * self._lam_int(k2, s1, s2) - lam12
+
+        om = mp.findroot(F, (lam12, lam12 * (1 + f / 2) + mp.mpf(10) ** -20), solver="secant",
+                         tol=mp.mpf(10) ** (-2 * mp.mp.dps + 10), maxsteps=200)
+        assert abs(F(om)) < mp.mpf(10) ** (-mp.mp.dps + 6)
+        alp1, sa0, ca0, s1, s2, k2 = geom(om)
+        _, alp2 = self._lat_azi(sa0, ca0, s2)
+        return {
+            "s12": self._dist_int(k2, s1, s2),
+            "azi1": deg(alp1),
+            "azi2": deg(alp2),
+            "S12": self._area_int(sa0, ca0, k2, s1, s2),
+            "sig12": s2 - s1,
+            "lam12": lam12,
+        }
 
 
 def lit(v):
