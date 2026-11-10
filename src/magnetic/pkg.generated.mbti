@@ -1,0 +1,77 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ChrisTu117/moongeodesy/magnetic"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn decimal_year(Int32, Int32, Int32) -> Double raise MagneticError
+
+pub fn grivation(Double, Double) -> Double
+
+pub fn magnetic_bearing(Double, Double) -> Double
+
+pub fn true_bearing(Double, Double) -> Double
+
+// Errors
+#derive(@debug.Debug)
+pub suberror MagneticError {
+  InvalidLatitude(Double)
+  InvalidLongitude(Double)
+  HeightOutOfRange(Double)
+  DateOutOfRange(Double)
+  InvalidDate(Int32, Int32, Int32)
+}
+pub fn MagneticError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+#derive(Eq, @debug.Debug)
+pub(all) enum CompassZone {
+  Normal
+  Caution
+  Blackout
+}
+pub fn CompassZone::equal(Self, Self) -> Bool
+pub fn CompassZone::not_equal(Self, Self) -> Bool
+pub fn CompassZone::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub(all) struct MagneticElements {
+  x : Double
+  y : Double
+  z : Double
+  h : Double
+  f : Double
+  incl : Double
+  decl : Double
+  gv : Double
+  xdot : Double
+  ydot : Double
+  zdot : Double
+  hdot : Double
+  fdot : Double
+  incl_dot : Double
+  decl_dot : Double
+}
+pub fn MagneticElements::to_repr(Self) -> @debug.Repr
+pub fn MagneticElements::zone(Self) -> CompassZone
+
+pub struct MagneticModel {
+  name : String
+  epoch : Double
+  valid_from : Double
+  valid_to : Double
+  min_height : Double
+  max_height : Double
+  nmax : Int32
+  radius : Double
+  // private fields
+}
+pub fn MagneticModel::declination(Self, Double, Double, Double, Double) -> Double raise MagneticError
+pub fn MagneticModel::field(Self, Double, Double, Double, Double) -> MagneticElements raise MagneticError
+pub fn MagneticModel::wmm2025() -> Self
+
+// Type aliases
+
+// Traits

@@ -1,0 +1,11 @@
+import {
+  "moonbitlang/core/math",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/double",
+  "ChrisTu117/moongeodesy/internal/geomath",
+}
+
+import {
+  "ChrisTu117/moongeodesy/utm",
+  "moonbitlang/core/math",
+} for "test"
