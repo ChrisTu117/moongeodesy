@@ -45,7 +45,7 @@ test "GeodTest inverse: distance, azimuths, reduced length, area" {
   println(
     "inverse max |ds12| m = \{max_err(es)}, max azi err (m at distance) = \{max_err(ea)}, max |dm12| = \{max_err(em)}, max |dS12|/area0 = \{max_err(eS)}",
   )
-  assert_true(max_err(es) < 2.0e-8) // 20 nm
+  assert_true(max_err(es) < 8.0e-9) // README: < 8 nm
   assert_true(max_err(ea) < 1.0e-6) // 1 micron; worst cases are near-antipodal
   assert_true(max_err(em) < 2.0e-8)
   assert_true(max_err(eS) < 1.0e-12)
@@ -70,7 +70,7 @@ test "GeodTest direct: position, azimuth, area" {
   println(
     "direct max pos err m = \{max_err(ep)}, max azi2 err deg = \{max_err(ea)}, max |dS12|/area0 = \{max_err(eS)}",
   )
-  assert_true(max_err(ep) < 2.0e-8)
+  assert_true(max_err(ep) < 1.0e-8) // README: < 10 nm
   assert_true(max_err(ea) < 1.0e-8)
   assert_true(max_err(eS) < 1.0e-11)
 }

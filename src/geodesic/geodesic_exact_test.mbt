@@ -104,12 +104,12 @@ test "GeodesicExact matches GeodSolve -E for |f| > 0.02" {
   )
   assert_true(n_inv == 105)
   assert_true(n_dir == 6)
-  assert_true(ds < 2.0e-8) // 20 nm
+  assert_true(ds < 8.0e-9) // README: < 8 nm
   assert_true(da < 1.0e-12)
   assert_true(dm < 2.0e-8)
   assert_true(d_scale < 1.0e-13)
   assert_true(dS < 1.0e-15)
-  assert_true(dp < 1.0e-12)
+  assert_true(dp < 1.0e-13) // README: < 1e-13 degree (about 11 nm)
 }
 
 ///|

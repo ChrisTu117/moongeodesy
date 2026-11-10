@@ -136,9 +136,9 @@ test "closest matches IntersectTool" {
   println(
     "intersect closest n=\{ix_closest.length()} max |dx| m = \{ix_max(dx)}, max |dy| m = \{ix_max(dy)}, max separation m = \{ix_max(sep)}",
   )
-  assert_true(ix_max(dx) < 1.0e-6)
-  assert_true(ix_max(dy) < 1.0e-6)
-  assert_true(ix_max(sep) < 1.0e-6)
+  assert_true(ix_max(dx) < 5.0e-7) // README: < 0.5 µm
+  assert_true(ix_max(dy) < 5.0e-7)
+  assert_true(ix_max(sep) < 1.0e-8) // README: the curves meet to < 10 nm
 }
 
 ///|
@@ -167,8 +167,8 @@ test "offset closest matches IntersectTool" {
   println(
     "intersect offset n=\{ix_offset.length()} max |dx| m = \{ix_max(dx)}, max |dy| m = \{ix_max(dy)}",
   )
-  assert_true(ix_max(dx) < 1.0e-6)
-  assert_true(ix_max(dy) < 1.0e-6)
+  assert_true(ix_max(dx) < 5.0e-7) // README: < 0.5 µm
+  assert_true(ix_max(dy) < 5.0e-7)
 }
 
 ///|
@@ -200,9 +200,9 @@ test "next matches IntersectTool" {
   println(
     "intersect next n=\{ix_next.length()} max |dx| m = \{ix_max(dx)}, max |dy| m = \{ix_max(dy)}, max separation m = \{ix_max(sep)}",
   )
-  assert_true(ix_max(dx) < 1.0e-6)
-  assert_true(ix_max(dy) < 1.0e-6)
-  assert_true(ix_max(sep) < 1.0e-6)
+  assert_true(ix_max(dx) < 5.0e-7) // README: < 0.5 µm
+  assert_true(ix_max(dy) < 5.0e-7)
+  assert_true(ix_max(sep) < 1.0e-8) // README: the curves meet to < 10 nm
 }
 
 ///|
@@ -262,9 +262,9 @@ test "segment matches IntersectTool" {
   println(
     "intersect segment n=\{ix_segment.length()} max |dx| m = \{ix_max(dx)}, max |dy| m = \{ix_max(dy)}, max separation m = \{ix_max(sep)}",
   )
-  assert_true(ix_max(dx) < 1.0e-6)
-  assert_true(ix_max(dy) < 1.0e-6)
-  assert_true(ix_max(sep) < 1.0e-6)
+  assert_true(ix_max(dx) < 5.0e-7) // README: < 0.5 µm
+  assert_true(ix_max(dy) < 5.0e-7)
+  assert_true(ix_max(sep) < 1.0e-8) // README: the curves meet to < 10 nm
 }
 
 ///|
