@@ -75,10 +75,11 @@ fn ground_err(
 
 ///|
 test "matches a 50-digit evaluation of the EPSG / Snyder formulas" {
-  // tools/gen_conic.py: 16 projections (LCC 2SP and 1SP, Albers; China
+  // tools/gen_conic.py: 18 projections (LCC 2SP and 1SP, Albers; China
   // CGCS2000 and Krasovsky, US, Europe, Australia, southern hemisphere,
-  // parallels 1e-4 degrees apart, polar, near the equator, one parallel),
-  // 1592 points from 89°S to 89°N and up to 170° from the central meridian.
+  // parallels 1e-4 degrees apart, polar, near the equator, one parallel,
+  // a sphere), 1792 points from 89°S to 89°N and up to 170° from the
+  // central meridian.
   let mut dxy = 0.0
   let mut dgamma = 0.0
   let mut dk = 0.0
@@ -170,9 +171,10 @@ test "IOGP GIGS 5102, 5103, 5109" {
     println(
       "GIGS set \{i}: max |dE|,|dN| = \{de} m, max |dlat|,|dlon| = \{dl} deg",
     )
-    // The files give 2 or 3 decimals. The largest residual, 4.5 mm on
-    // GIGS-5109-09, is the same against PROJ: the file value is rounded to
-    // the centimetre.
+    // The files give 2 or 3 decimals. The residuals (up to 0.8 mm for
+    // Lambert, 4.5 mm on GIGS-5109-09 for Albers) are a little above that
+    // rounding, but PROJ shows the same differences at the same points, so
+    // they are in the GIGS values. GIGS itself allows 3-5 cm.
     let (etol, ltol) = if s[0].to_int() == 2 {
       (0.005, 7.0e-8)
     } else {
