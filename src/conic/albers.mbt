@@ -543,5 +543,22 @@ pub fn AlbersEqualArea::reverse(
     } else {
       1.0
     })
-  { lat, lon, gamma: self.sign * theta * @geomath.deg_per_rad, k, }
+  let gamma = self.sign * theta * @geomath.deg_per_rad
+  // Near a pole the meridian scale of an equal-area projection tends to 0:
+  // on most conic grids, points within about 1e-6 degrees of the pole fall on
+  // the pole's own map coordinates to rounding, so latitude cannot be
+  // recovered more finely there. When the input is, to rounding, the image
+  // of the pole, return the pole itself; a pole then round-trips exactly.
+  if lat.abs() > 89.99 {
+    let pole = if lat > 0.0 { 90.0 } else { -90.0 }
+    let p = self.forward(lon0, pole, lon)
+    let size = @geomath.fmax(
+      @geomath.fmax(x.abs(), y0.abs()),
+      self.nrho0 / self.k0,
+    )
+    if @geomath.hypot(p.x - x, p.y - y0) <= 8.0 * eps * size {
+      return { lat: pole, lon, gamma, k: p.k, }
+    }
+  }
+  { lat, lon, gamma, k, }
 }

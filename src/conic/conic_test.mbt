@@ -526,3 +526,63 @@ test "invalid parameters raise ConicError" {
   ignore(@conic.AlbersEqualArea::new(6371000.0, 0.0, 30.0, 60.0))
   ignore(@conic.LambertConformalConic::new(6371000.0, -0.01, 30.0, 60.0))
 }
+
+///|
+test "Albers: poles round-trip exactly; near-pole points stay accurate" {
+  let a = 6378137.0
+  let f = 1.0 / 298.257223563
+  for
+    s in [
+      (25.0, 47.0, 105.0),
+      (-18.0, -36.0, 132.0),
+      (30.0, -30.0, 0.0),
+      (60.0, 85.0, 0.0),
+      (89.0, 89.0, 0.0),
+      (90.0, 90.0, 0.0),
+      (-90.0, -90.0, 0.0),
+    ] {
+    let p = @conic.AlbersEqualArea::new(a, f, s.0, s.1) catch {
+      e => abort("\{e.to_repr()}")
+    }
+    for pole in [90.0, -90.0] {
+      // The pole of a polar projection's far side is the outer circle; skip
+      // the azimuthal case's antipodal pole, which is a whole circle.
+      if (s.0 == 90.0 && pole < 0.0) || (s.0 == -90.0 && pole > 0.0) {
+        continue
+      }
+      for lon in [s.2, s.2 + 30.0, s.2 - 150.0] {
+        let fw = p.forward(s.2, pole, lon)
+        let back = p.reverse(s.2, fw.x, fw.y)
+        assert_eq(back.lat, pole)
+        // 1e-4 degree (11 m) from the pole the map still resolves latitude.
+        let near = if pole > 0.0 { pole - 1.0e-4 } else { pole + 1.0e-4 }
+        let g = p.forward(s.2, near, lon)
+        let b = p.reverse(s.2, g.x, g.y)
+        assert_true((b.lat - near).abs() < 1.0e-7)
+        // Within about 1e-6 degree of the pole the answer is the pole or
+        // close to it: never worse than 4e-6 degree (45 cm).
+        let close = if pole > 0.0 { pole - 1.0e-6 } else { pole + 1.0e-6 }
+        let c = p.forward(s.2, close, lon)
+        let d = p.reverse(s.2, c.x, c.y)
+        assert_true((d.lat - close).abs() < 4.0e-6)
+      }
+    }
+  }
+}
+
+///|
+test "Lambert: both poles round-trip; the far pole is at a huge distance" {
+  let lcc = @conic.LambertConformalConic::new(
+    6378137.0,
+    1.0 / 298.257223563,
+    25.0,
+    47.0,
+  ) catch {
+    e => abort("\{e.to_repr()}")
+  }
+  let apex = lcc.forward(105.0, 90.0, 130.0)
+  assert_eq(lcc.reverse(105.0, apex.x, apex.y).lat, 90.0)
+  let far = lcc.forward(105.0, -90.0, 130.0)
+  assert_true(@math.hypot(far.x, far.y) > 1.0e20)
+  assert_eq(lcc.reverse(105.0, far.x, far.y).lat, -90.0)
+}
