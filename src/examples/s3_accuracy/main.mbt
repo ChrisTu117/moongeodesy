@@ -33,6 +33,13 @@ fn main {
       "| \{labels[i]} | \{n[i]} | \{fmt(inv[i] * 1.0e9)} | \{fmt(dir[i] * 1.0e9)} |",
     )
   }
+  // The README table: 21 / 55 / 124 cases, every error below 8 nm.
+  if n[0] != 21 || n[1] != 55 || n[2] != 124 || n[3] != 200 {
+    abort("unexpected case counts")
+  }
+  if inv[3] > 8.0e-9 || dir[3] > 8.0e-9 {
+    abort("error above 8 nm")
+  }
 }
 
 ///|

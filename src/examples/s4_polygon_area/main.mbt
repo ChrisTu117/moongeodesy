@@ -42,7 +42,8 @@ fn main {
   // 3. A continental triangle (Mohe, Kashgar region, Sanya) vs geographiclib.
   let big = [(53.56, 123.26), (36.0, 73.5), (18.16, 109.5)]
   let b = g.polygon_area(big[:])
-  let ref_area = 7842200048910.174 // geographiclib 2.1, m2
+  // geographiclib 2.1 values from tools/gen_s4_reference.py.
+  let ref_area = 7842200048910.174 // m2
   let ref_perim = 12434486.692466922 // m
   println("triangle Mohe-Kashgar-Sanya:")
   println(
@@ -68,6 +69,7 @@ fn main {
     "WGS-84 quad area \{q.area} m2, |diff| vs geographiclib \{(q.area - q_ref).abs()} m2",
   )
   if ((b.area - ref_area) / ref_area).abs() > 1.0e-12 ||
+    ((b.perimeter - ref_perim) / ref_perim).abs() > 1.0e-12 ||
     (q.area - q_ref).abs() > 1.0e-6 {
     abort("polygon area disagrees with geographiclib")
   }

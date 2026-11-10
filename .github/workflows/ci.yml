@@ -40,20 +40,29 @@ jobs:
       - name: Test (all backends)
         run: moon test --target all
 
-      - name: Run demo
+      - name: Library has no FFI
         run: |
-          moon run src/examples/demo
-          moon run src/examples/s1_cn_distance
-          moon run src/examples/s2_utm_mgrs
-          moon run src/examples/s3_accuracy
-          moon run src/examples/s4_polygon_area
-          moon run src/examples/s5_compass
-          moon run src/examples/s6_conic_area
+          if grep -rn 'extern ' src/geodesic src/utm src/cn src/internal src/magnetic src/conic; then
+            echo "library packages must not use extern"
+            exit 1
+          fi
+
+      - name: Run examples (every backend; each aborts on a wrong result)
+        run: |
+          for t in wasm wasm-gc js native; do
+            for s in demo s1_cn_distance s2_utm_mgrs s3_accuracy s4_polygon_area s5_compass s6_conic_area; do
+              echo "== $t $s"
+              moon run --target $t src/examples/$s
+            done
+          done
 
       - name: Run CLI example
         run: |
           moon run src/examples/cli -- geod inverse 39.9087 116.3975 31.2304 121.4737
           moon run src/examples/cli -- geod direct 22.5431 114.0579 90 1000000
+          moon run src/examples/cli -- rhumb inverse 51.4778 -0.0015 35.6762 139.6503
+          moon run src/examples/cli -- intersect closest 0 0 45 45 10 135
+          moon run src/examples/cli -- enu forward 39.9087 116.3975 39.9097 116.3985 50
           moon run src/examples/cli -- coord wgs2gcj 39.9087 116.3975
           moon run src/examples/cli -- coord gcj2wgs 39.91010 116.40374
           moon run src/examples/cli -- coord gcj2bd 39.91010 116.40374
@@ -63,6 +72,7 @@ jobs:
           moon run src/examples/cli -- mag 39.9087 116.3975 2026-11-10
           moon run src/examples/cli -- albers forward 25 47 0 105 39.9087 116.3975
           moon run src/examples/cli -- lcc reverse 25 47 0 105 1000000 4000000
+          moon run src/examples/cli | grep -q 'enu reverse'
           if moon run src/examples/cli -- nope; then
             echo "unknown command should fail"
             exit 1

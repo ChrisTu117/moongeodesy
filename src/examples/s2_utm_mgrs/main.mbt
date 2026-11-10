@@ -14,7 +14,7 @@ fn main {
   for p in pts {
     let (name, lat, lon) = p
     show(g, name, lat, lon) catch {
-      _ => println("\{name}: conversion failed")
+      e => abort("\{name}: conversion failed: \{e}")
     }
   }
 }
@@ -39,4 +39,7 @@ fn show(
   println(
     "  UTM round trip \{utm_rt} m; MGRS 1 m cell corner offset \{mgrs_off} m",
   )
+  if utm_rt > 1.0e-6 || mgrs_off > 1.4143 {
+    abort("\{name}: residual too large")
+  }
 }
