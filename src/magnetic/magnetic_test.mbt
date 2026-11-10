@@ -52,15 +52,41 @@ test "WMM2025 matches the 100 official double-precision test values" {
   // The file has 6 decimals (half a unit is 5e-7). Y and Z agree to that
   // rounding plus a few units of double rounding.
   assert_true(max_abs(dyz) < 2.5e-6)
-  // X (and so H and F) differ by up to 7.2e-4 nT, 1.3e-8 of the field;
-  // on the equator the file agrees to its rounding. This is far below the
-  // 0.1 nT the report quotes for single-precision software and the model's
-  // ~100 nT accuracy.
+  // X (and so H and F) differ by up to 7.2e-4 nT, 1.3e-8 of the field. The
+  // independent 40-digit evaluation below reproduces our X, not the file's,
+  // and the file agrees with both on the equator, so the difference is in
+  // the file. It is far below the 0.1 nT the report quotes for
+  // single-precision software and the model's ~100 nT accuracy.
   assert_true(max_abs(dxhf) < 1.0e-3)
   assert_true(max_abs(drate) < 2.0e-6)
   assert_true(max_abs(dangrate) <= 5.1e-7)
   // D and I are printed with 2 decimals.
   assert_true(max_abs(dang) <= 0.005 + 1.0e-9)
+}
+
+///|
+test "WMM2025 matches an independent 40-digit evaluation (119 points)" {
+  // tools/gen_wmm_independent.py: exact Legendre polynomials, numerical
+  // gradient of the potential in ECEF, projection on the geodetic frame.
+  // Includes both poles on three meridians, -1 km and 850 km, 2025.0 and
+  // 2030.0, and nine Chinese cities.
+  let wmm = @magnetic.MagneticModel::wmm2025()
+  let d = []
+  let drate = []
+  for row in wmm2025_independent {
+    let e = wmm.field(row[2], row[3], row[1] * 1000.0, row[0])
+    d.push(e.x - row[4])
+    d.push(e.y - row[5])
+    d.push(e.z - row[6])
+    drate.push(e.xdot - row[7])
+    drate.push(e.ydot - row[8])
+    drate.push(e.zdot - row[9])
+  }
+  println(
+    "WMM2025 vs independent evaluation: max |dX|,|dY|,|dZ| = \{max_abs(d)} nT, max |d rate| = \{max_abs(drate)} nT/yr",
+  )
+  assert_true(max_abs(d) < 1.0e-9)
+  assert_true(max_abs(drate) < 1.0e-12)
 }
 
 ///|
