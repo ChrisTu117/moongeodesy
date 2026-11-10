@@ -85,8 +85,8 @@ test "WMM2025 matches an independent 40-digit evaluation (119 points)" {
   println(
     "WMM2025 vs independent evaluation: max |dX|,|dY|,|dZ| = \{max_abs(d)} nT, max |d rate| = \{max_abs(drate)} nT/yr",
   )
-  assert_true(max_abs(d) < 1.0e-9)
-  assert_true(max_abs(drate) < 1.0e-12)
+  assert_true(max_abs(d) < 1.0e-10)
+  assert_true(max_abs(drate) < 1.0e-13)
 }
 
 ///|
