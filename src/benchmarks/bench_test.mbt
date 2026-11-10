@@ -50,3 +50,44 @@ test "mgrs encode precision 5" (b : @bench.T) {
     b.keep(s.length())
   })
 }
+
+///|
+let wmm : @magnetic.MagneticModel = @magnetic.MagneticModel::wmm2025()
+
+///|
+test "wmm2025 field (all elements and rates)" (b : @bench.T) {
+  b.bench(fn() {
+    let e = wmm.field(39.9087, 116.3975, 0.0, 2026.5) catch { _ => panic() }
+    b.keep(e.decl)
+  })
+}
+
+///|
+let albers : @conic.AlbersEqualArea = @conic.AlbersEqualArea::new(
+  6378137.0,
+  1.0 / 298.257222101,
+  25.0,
+  47.0,
+) catch {
+  _ => panic()
+}
+
+///|
+test "albers forward" (b : @bench.T) {
+  b.bench(fn() { b.keep(albers.forward(105.0, 39.9087, 116.3975).x) })
+}
+
+///|
+let lcc : @conic.LambertConformalConic = @conic.LambertConformalConic::new(
+  6378137.0,
+  1.0 / 298.257222101,
+  25.0,
+  47.0,
+) catch {
+  _ => panic()
+}
+
+///|
+test "lcc forward" (b : @bench.T) {
+  b.bench(fn() { b.keep(lcc.forward(105.0, 39.9087, 116.3975).x) })
+}
