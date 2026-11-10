@@ -31,6 +31,10 @@ fn main {
   let rad = 3.141592653589793 / 180.0
   let miss = (leg.s12 * @math.sin(e.decl * rad)).abs()
   println("miss if declination is ignored: \{miss} m")
+  // The README quotes a 263 m miss over 2 km.
+  if miss < 260.0 || miss > 266.0 {
+    abort("unexpected miss \{miss} m")
+  }
 
   // The same bearing from a UTM map: grid bearing + convergence = true
   // bearing, and the grivation (grid -> magnetic) is D - convergence.
@@ -66,5 +70,10 @@ fn main {
       err => abort("\{err.to_repr()}")
     }
     println("  \{c.0}: \{d} deg")
+    // The README quotes Mohe -12.8 and Kashgar +4.1 degrees.
+    if (c.0 == "Mohe" && (d - -12.8).abs() > 0.05) ||
+      (c.0 == "Kashgar" && (d - 4.1).abs() > 0.05) {
+      abort("unexpected declination at \{c.0}: \{d}")
+    }
   }
 }

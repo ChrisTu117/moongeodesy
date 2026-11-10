@@ -32,6 +32,12 @@ jobs:
       - name: Format check
         run: moon fmt --check
 
+      - name: README code blocks are the tested ones
+        run: |
+          python3 tools/sync_readme_tests.py
+          moon fmt
+          git diff --exit-code -- src/examples/readme_check
+
       - name: Interface files up to date
         run: |
           moon info
