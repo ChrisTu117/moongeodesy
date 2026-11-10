@@ -1,83 +1,45 @@
 # moongeodesy progress
 
-Updated: 2026-11-10 (Asia/Shanghai). Toolchain: moon 0.1.20261104 / moonc v0.10.20; CI installs the current MoonBit CLI.
+Updated: 2026-11-10 (Asia/Shanghai). Version 0.2.1 in `moon.mod`
+(0.2.0 is on mooncakes.io). Toolchain: moon 0.1.20261104; CI installs the
+current MoonBit CLI.
 
 ## Status
-`moon test --target all` → 128 tests pass on each of wasm, wasm-gc, js, and native.
-`moon check --deny-warn`, `moon fmt --check`, `moon package --list`, and
-`bash tools/acceptance.sh` are clean. Version 0.2.0 in `moon.mod`; mooncakes
-still has 0.1.2 until the author publishes (see `用户要做的事.md`).
 
-## November contest work (PRs #34, #36, #37)
-- `magnetic`: WMM2025 (NOAA/BGS): field, elements, rates, grid variation,
-  grivation, compass zones, bearings, decimal years; vs 100 official points,
-  report Tables 3b/3d/6, and an independent 40-digit evaluation (< 1e-10 nT)
-- `conic`: Lambert conformal conic and Albers equal-area (GeographicLib port),
-  EPSG grids 9801/9802/9822; vs 50-digit EPSG/Snyder formulas (1592 points),
-  PROJ 9.5, IOGP GIGS 5102/5103/5109, EPSG and Snyder examples
-- CLI `mag`, `lcc`, `albers`; scenarios s5 (compass) and s6 (conic areas)
-- acceptance work: every README statement mapped to a test
-  (`docs/十一月验收清单.md`); independent ECEF/ENU references; assertions
-  equal the published bounds; scenarios abort on wrong results and run on all
-  backends in CI; README code blocks generated into tests
+- `moon test --target all`: every test passes on wasm, wasm-gc, js, and
+  native (136 per backend).
+- `bash tools/acceptance.sh` runs every automated item of
+  [`docs/十一月验收清单.md`](docs/十一月验收清单.md); all pass.
+- Accuracy and reference data: see the table in [README.md](README.md#accuracy-and-testing).
+  This file does not repeat the numbers, so they cannot go stale here.
 
-### 1. `cn` — WGS-84 / GCJ-02 / BD-09 ✅
-- forward transforms, exact iterative inverses (round trip < 1e-9°), single-step approximate inverses, `out_of_china`
-- `out_of_china` excludes the land of other countries inside the usual box (Natural Earth 1:10m, China point of view, `tools/gen_china_boundary.py`); `out_of_china_bbox` keeps the box-only test
-- 200 reference points from `coord-convert` (Krasovsky a=6378245): agreement < 1e-11°
+## Packages
 
-### 2. `geodesic` — Karney / GeographicLib port ✅
-- `inverse`, `direct`, `arc_direct`, `distance`; `GeodesicLine` (`position`, `arc_position`, `densify`, `inverse_line`, `direct_line`)
-- `PolygonArea` (`add_point`, `add_edge`, `compute`, `test_point`, `test_edge`, polyline mode) + `polygon_area`
-- `Rhumb::inverse` / `direct` / `distance` / `line`, `RhumbLine::position` (`wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`)
-- `Intersect::closest` / `next` / `segment` (`wgs84()`, `new(geodesic)`); `c` is 0 for a crossing, +1 for coincident parallel, −1 for coincident antiparallel; `segmode` is `3*kx+ky`
-- `Geocentric::forward` / `reverse` (`wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`, `from_geodesic`); ECEF (X, Y, Z) in metres
-- `LocalCartesian::forward` / `reverse` / `reset` (`wgs84(lat0, lon0, h0?)`, `grs80`, `new(a, f, …)`, `from_geodesic`); local East-North-Up relative to `(lat0, lon0, h0)`; `h` / `h0` are ellipsoidal heights
-- ellipsoids: `wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`
-- `GeodesicExact` / `GeodesicLineExact` (`wgs84()`, `grs80()`, `cgcs2000()`, `new(a, f)`): elliptic-integral inverse, direct, arc direct, and lines for `|f| > 1/50` (GeographicLib `GeodesicExact`)
-- GeodTest-short.dat (CC0), 1000 cases: inverse max Δs12 7.5 nm; direct max position error 8.6 nm
-- vs Python geographiclib 2.1 (2020 cases): relative diff < 1e-11 (an accurate `hypot` was needed to match on very short lines)
-- GeodesicExact vs GeographicLib 2.5 `GeodSolve -E` (105 inverse + 6 direct; `|f|` = 0.05, 0.1, 0.2, 0.5 and prolate −0.1, −0.2, plus WGS-84): max Δs12 7.5 nm; direct position error 6.4 nm; area < 1e-15 × ellipsoid area
-- polygons (pole-enclosing, antimeridian) vs geographiclib: < 1e-14 × Earth area
-- rhumb lines vs GeographicLib RhumbSolve 2.5 (125 inverse + 296 direct cases, poles, antimeridian, due east/west): inverse max Δs12 3.73 nm; direct max position error 10.5 nm; area < 4e-15 × ellipsoid area
-- geodesic intersections vs GeographicLib IntersectTool 2.5 (53 closest + 12 offset + 24 next + 50 segment cases on WGS-84, a sphere, a prolate ellipsoid, and GRS80, plus the equatorial coincident cases): max |Δx|, |Δy| 0.45 µm; the curves meet to 8 nm
-- LocalCartesian / Geocentric vs GeographicLib algorithm vectors (48 geocentric + 39 local cases; WGS-84, sphere, prolate, GRS80; cross-checked against PROJ topocentric): forward max |Δ| < 1 nm
+- `geodesic`: Karney geodesics (series and `GeodesicExact`), lines,
+  polygons, rhumb lines, intersections, Geocentric and LocalCartesian
+  (GeographicLib port).
+- `utm`: transverse Mercator, polar stereographic, UTM/UPS, MGRS.
+- `conic` (November): Lambert conformal conic and Albers equal-area, EPSG
+  grids 9801/9802/9822.
+- `magnetic` (November): World Magnetic Model 2025.
+- `cn`: WGS-84 / GCJ-02 / BD-09 with exact inverses; no offset on foreign
+  land or within about 9 km of foreign coasts.
 
-### 3. `utm` — TM / UTM / UPS / MGRS ✅
-- transverse Mercator (Krüger n^6), polar stereographic, UTM/UPS with Norway/Svalbard zones, convergence + scale
-- vs PROJ 9 (pyproj): 600 points, max 5.5 nm
-- MGRS encode/decode (UTM + polar UPS grids, precision 0–11): 315/315 strings identical to NGA GeoTrans
+## History
 
-### Repo hygiene
-- README.md (English + 中文), MIT LICENSE, `src/examples/demo` (run: `moon run src/examples/demo`; includes rhumb / intersect / ENU), `src/examples/cli` (run: `moon run src/examples/cli -- geod|rhumb|intersect|enu|coord …`), README snippets compiled as tests
-- `.github/workflows/ci.yml`: check (deny-warn), fmt, mbti diff, tests on all backends, demo, package (Linux + macOS)
-- `tools/*.py` regenerate every reference vector (needs `pip install geographiclib pyproj mgrs coord-convert`; rhumb vectors also need GeographicLib's `RhumbSolve`, from `geographiclib-tools` or a GeographicLib 2.5 source build; intersection vectors need `IntersectTool` from a GeographicLib 2.5 source build; GeodesicExact vectors need `GeodSolve -E` from a GeographicLib 2.5 source build; LocalCartesian vectors are generated by a faithful Python transcription of GeographicLib Geocentric/LocalCartesian, cross-checked with PROJ topocentric)
-- module metadata in `moon.mod` (the current toolchain deprecates `moon.mod.json` and migrates it to `moon.mod`)
-- published on mooncakes.io as `ChrisTu117/moongeodesy` 0.1.1
+- October 2026: library created for the October contest (see README,
+  History).
+- 2026-11-08: fixes for the October acceptance review (#32).
+- 2026-11-10: `magnetic` (#34) and `conic` (#36); README audit and
+  acceptance checklist (#37); 0.2.0 published.
+- 2026-11-10, second audit: foreign coasts and islands no longer offset
+  (GeoNames-tested boundary), Albers poles round-trip exactly, prolate
+  inverse conformal latitude converges, third-party notices, remaining
+  README and docs corrections; 0.2.1.
 
-## Acceptance fixes (October contest feedback)
-The October acceptance review found three problems. All three are fixed and covered by tests:
+## Ideas not done
 
-1. **Coordinates abroad were offset.** Seoul and Hanoi lie inside the old bounding box, so GCJ-02 was applied to them. `out_of_china` now also returns true on the land of the 28 other countries that overlap the box, using Natural Earth 1:10m admin-0 borders (China point of view, public domain), clipped to the box and simplified to about 1 km near China (`src/cn/boundary_data.mbt`, generated by `tools/gen_china_boundary.py`). China, including Hong Kong, Macau and Taiwan, and the sea inside the box keep the offset. Tests: 22 foreign cities stay unchanged, 17 Chinese cities are offset and round-trip.
-2. **The exact inverse was off by ~0.0055° next to the box edges.** The iteration used the forward transform, which switches to the identity when an iterate leaves the box. It now solves the plain GCJ-02 offset and keeps the solution only if it lies in China (otherwise the input is returned). Every WGS-84 point inside China now round-trips below 1e-9°, including points next to the box edges and land borders (tests sweep the four edges, a 1° grid over the box, and points 200 m and 900 m from every other border vertex).
-3. **UPS at ±90° gave NaN.** `taupf(±inf)` evaluated `inf - inf`. It now returns `tau` unchanged, as GeographicLib does, so the poles map to easting and northing 2,000,000 and back.
-
-The same change migrates the deprecated `derive(...)` syntax to `#derive(...)` (the current compiler rejects the old form under `--deny-warn`). Cost: `wgs84_to_gcj02` goes from about 107 ns to about 267 ns per call (native benchmark), because of the border test.
-
-## Left / ideas for further commits
-- [x] CLI (`geod inverse …`, `coord wgs2gcj …`) as a second example (`moon run src/examples/cli`)
-- [x] CLI/demo cover rhumb, intersections, and LocalCartesian ENU (#27)
-- [x] rhumb lines (#15, PR #17)
-- [x] geodesic intersections (#19, PR #20). `All` (every intersection inside a radius) was not ported
-- [x] `GeodesicExact` for `|f| > 0.02` (elliptic integrals, `GeodSolve -E`)
-- [x] LocalCartesian / Geocentric ENU (#23, PR #24)
-- [x] `out_of_china` box edge / HK·Macau·Taipei / south-of-box tests (#29)
-- [x] foreign land inside the box is no longer offset; exact inverse is exact next to every boundary; UPS at ±90° (acceptance fixes below)
-- [x] benchmarks (`moon bench`, `src/benchmarks`, #8)
-- [x] polygon area scenario `src/examples/s4_polygon_area` (#10)
-- [x] docs: package `README.mbt.md` for `geodesic` (including rhumb lines, intersections, LocalCartesian), `utm`, and `cn` (checked examples), plus `///` notes for `moon doc` / mooncakes. Preview: `moon doc --serve`
-
-## Already done
-- public repo: https://github.com/ChrisTu117/moongeodesy
-- published on mooncakes.io as ChrisTu117/moongeodesy 0.1.1 (do not republish from a docs-only change)
-- hackathon registration passed review
+- Independent (non-GeographicLib) references for rhumb lines,
+  intersections, `GeodesicExact`, and polygon area, e.g. high-precision
+  quadrature in `mpmath`.
+- `Intersect::All` (every intersection within a radius).
