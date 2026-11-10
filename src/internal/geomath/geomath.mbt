@@ -304,3 +304,56 @@ pub fn hypot(x0 : Double, y0 : Double) -> Double {
   let r = s - hh + lo - he
   h + r / (2.0 * h)
 }
+
+///|
+/// e * atanh(e * x) (or the oblate/prolate analogue) for signed `es`
+/// (es = sign(f) * sqrt(|f (2 - f)|)), as in GeographicLib::Math::eatanhe.
+pub fn eatanhe(x : Double, es : Double) -> Double {
+  if es > 0.0 {
+    es * @math.atanh(es * x)
+  } else {
+    -es * @math.atan(es * x)
+  }
+}
+
+///|
+/// tan(chi) where chi is the conformal latitude, given tau = tan(phi)
+/// (GeographicLib::Math::taupf).
+pub fn taupf(tau : Double, es : Double) -> Double {
+  // At the poles tau = tan(±90°) is ±inf and the formula below gives
+  // inf - inf = NaN; GeographicLib returns tau unchanged there.
+  if !is_finite(tau) {
+    return tau
+  }
+  let tau1 = hypot(1.0, tau)
+  let sig = @math.sinh(eatanhe(tau / tau1, es))
+  hypot(1.0, sig) * tau - sig * tau1
+}
+
+///|
+/// Inverse of `taupf` by Newton's method (GeographicLib::Math::tauf).
+pub fn tauf(taup : Double, es : Double) -> Double {
+  let tol = dbl_epsilon.sqrt() / 10.0
+  let taumax = 2.0 / dbl_epsilon.sqrt()
+  let e2m = 1.0 - es * es
+  let mut tau = if taup.abs() > 70.0 {
+    taup * @math.exp(eatanhe(1.0, es))
+  } else {
+    taup / e2m
+  }
+  let stol = tol * fmax(1.0, taup.abs())
+  if !(tau.abs() < taumax) {
+    return tau
+  }
+  for _ in 0..<5 {
+    let taupa = taupf(tau, es)
+    let dtau = (taup - taupa) *
+      (1.0 + e2m * tau * tau) /
+      (e2m * hypot(1.0, tau) * hypot(1.0, taupa))
+    tau = tau + dtau
+    if !(dtau.abs() >= stol) {
+      break
+    }
+  }
+  tau
+}

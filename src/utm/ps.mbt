@@ -23,7 +23,7 @@ pub fn PolarStereographic::new(
   let e2 = f * (2.0 - f)
   let es = (if f < 0.0 { -1.0 } else { 1.0 }) * e2.abs().sqrt()
   let e2m = 1.0 - e2
-  let c = (1.0 - f) * @math.exp(eatanhe(1.0, es))
+  let c = (1.0 - f) * @math.exp(@geomath.eatanhe(1.0, es))
   { a, f, k0, e2, es, e2m, c, }
 }
 
@@ -55,7 +55,7 @@ pub fn PolarStereographic::forward(
   let (sphi, cphi) = @geomath.sincosd(lat)
   let tau = sphi / cphi
   let secphi = @geomath.hypot(1.0, tau)
-  let taup = taupf(tau, self.es)
+  let taup = @geomath.taupf(tau, self.es)
   let mut rho = @geomath.hypot(1.0, taup) + taup.abs()
   rho = if taup >= 0.0 {
     if lat != 90.0 {
@@ -94,7 +94,7 @@ pub fn PolarStereographic::reverse(
     @geomath.dbl_epsilon * @geomath.dbl_epsilon
   }
   let taup = (1.0 / t - t) / 2.0
-  let tau = tauf(taup, self.es)
+  let tau = @geomath.tauf(taup, self.es)
   let secphi = @geomath.hypot(1.0, tau)
   let k = if rho != 0.0 {
     rho / self.a * secphi * (self.e2m + self.e2 / (secphi * secphi)).sqrt()
