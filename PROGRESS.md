@@ -1,11 +1,25 @@
 # moongeodesy progress
 
-Updated: 2026-11-08 (Asia/Shanghai). Toolchain: moon 0.1.20261104 / moonc v0.10.20 (this change); CI installs the current MoonBit CLI.
+Updated: 2026-11-10 (Asia/Shanghai). Toolchain: moon 0.1.20261104 / moonc v0.10.20; CI installs the current MoonBit CLI.
 
-## Status: all three priorities implemented and tested
-`moon test --target all` → 79 tests pass on wasm, wasm-gc, js, and native
-(13 of them are the API-doc examples).
-`moon check --deny-warn`, `moon fmt --check` and `moon package --list` are clean.
+## Status
+`moon test --target all` → 128 tests pass on each of wasm, wasm-gc, js, and native.
+`moon check --deny-warn`, `moon fmt --check`, `moon package --list`, and
+`bash tools/acceptance.sh` are clean. Version 0.2.0 in `moon.mod`; mooncakes
+still has 0.1.2 until the author publishes (see `用户要做的事.md`).
+
+## November contest work (PRs #34, #36, #37)
+- `magnetic`: WMM2025 (NOAA/BGS): field, elements, rates, grid variation,
+  grivation, compass zones, bearings, decimal years; vs 100 official points,
+  report Tables 3b/3d/6, and an independent 40-digit evaluation (< 1e-10 nT)
+- `conic`: Lambert conformal conic and Albers equal-area (GeographicLib port),
+  EPSG grids 9801/9802/9822; vs 50-digit EPSG/Snyder formulas (1592 points),
+  PROJ 9.5, IOGP GIGS 5102/5103/5109, EPSG and Snyder examples
+- CLI `mag`, `lcc`, `albers`; scenarios s5 (compass) and s6 (conic areas)
+- acceptance work: every README statement mapped to a test
+  (`docs/十一月验收清单.md`); independent ECEF/ENU references; assertions
+  equal the published bounds; scenarios abort on wrong results and run on all
+  backends in CI; README code blocks generated into tests
 
 ### 1. `cn` — WGS-84 / GCJ-02 / BD-09 ✅
 - forward transforms, exact iterative inverses (round trip < 1e-9°), single-step approximate inverses, `out_of_china`

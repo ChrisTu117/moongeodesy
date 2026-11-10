@@ -26,7 +26,6 @@ pub fn UtmCoord::to_string(Self) -> String
 
 False offsets are included: UTM easting 500 km, southern UTM northing 10_000 km, UPS easting and northing 2_000 km.
 
-Latitude exactly ±90 is inside the latitude check, but the UPS easting and northing are NaN. Use a point off the pole (UPS starts at 84°N and -80°S) when you need a finite grid coordinate.
 
 `to_latlon` reverses that. A non-finite easting or northing, or one with absolute value >= 1e8 m, raises `OutOfRange`.
 
@@ -119,7 +118,7 @@ pub fn PolarStereographic::reverse(
 
 `TransverseMercator::utm()` is WGS-84 with `k0 = 0.9996`. `forward` takes the central meridian and the point, all in degrees. `Projected.x` and `Projected.y` are metres from that meridian and the equator. There is no false easting or northing.
 
-The 6th-order Krüger series stays within a few nanometres for points within about 3900 km of the central meridian. Latitude ±90 is valid.
+Karney (2011) shows that the 6th-order Krüger series stays within a few nanometres for points within about 3900 km of the central meridian. The tests here compare with PROJ up to about 930 km from it (below 10 nm, measured 5.5 nm). Latitude ±90 is valid.
 
 `PolarStereographic::ups()` is WGS-84 with `k0 = 0.994`. `northp=true` projects about the north pole. `x` and `y` are metres from the pole. Latitude exactly ±90 is the pole itself: `x` and `y` are 0, so `from_latlon` gives easting and northing 2_000_000.
 

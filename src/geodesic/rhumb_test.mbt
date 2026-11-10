@@ -49,7 +49,7 @@ test "rhumb inverse matches RhumbSolve" {
   println(
     "rhumb inverse max |ds12| m = \{rhumb_max(ds)}, max azi err (m at distance) = \{rhumb_max(da)}, max |dS12|/area = \{rhumb_max(dS)}",
   )
-  assert_true(rhumb_max(ds) < 1.0e-6)
+  assert_true(rhumb_max(ds) < 4.0e-9) // README: < 4 nm
   assert_true(rhumb_max(da) < 1.0e-6)
   assert_true(rhumb_max(dS) < 1.0e-15)
 }
@@ -94,9 +94,9 @@ test "rhumb direct matches RhumbSolve" {
   println(
     "rhumb direct max pos err m = \{rhumb_max(ep)}, max |dlon| unrolled deg = \{rhumb_max(eu)}, max |dS12|/area = \{rhumb_max(eS)}",
   )
-  assert_true(rhumb_max(ep) < 1.0e-6)
+  assert_true(rhumb_max(ep) < 1.1e-8) // README: < 11 nm
   assert_true(rhumb_max(eu) < 1.0e-9)
-  assert_true(rhumb_max(eS) < 1.0e-14)
+  assert_true(rhumb_max(eS) < 5.0e-15) // README: < 5e-15
 }
 
 ///|

@@ -42,6 +42,8 @@ fn main {
     ("Harbin", 45.75, 126.5),
     ("Mohe", 52.75, 122.25),
   ]
+  let mut worst_lcc = 0.0
+  let mut worst_wm = 0.0
   for p in places {
     let ring = cell(p.1, p.2, 0.5, 100)
     let exact = g.polygon_area(ring).area.abs()
@@ -57,9 +59,19 @@ fn main {
     println(
       "  \{p.0}: \{exact / 1.0e6}  \{aa / 1.0e6} (\{(aa - exact) / exact})  \{la / 1.0e6} (\{(la - exact) / exact})  \{wm / 1.0e6} (\{(wm - exact) / exact})",
     )
-    if ((aa - exact) / exact).abs() > 1.0e-6 {
+    if ((aa - exact) / exact).abs() > 1.0e-8 {
       abort("Albers area is off")
     }
+    if ((la - exact) / exact).abs() > worst_lcc {
+      worst_lcc = ((la - exact) / exact).abs()
+    }
+    if ((wm - exact) / exact).abs() > worst_wm {
+      worst_wm = ((wm - exact) / exact).abs()
+    }
+  }
+  // The README quotes Lambert up to 6% and Web Mercator up to 176%.
+  if worst_lcc < 0.055 || worst_lcc > 0.065 || worst_wm < 1.7 || worst_wm > 1.8 {
+    abort("unexpected area errors \{worst_lcc}, \{worst_wm}")
   }
   println("")
   println("Lambert 25°N/47°N scale factor and meridian convergence:")

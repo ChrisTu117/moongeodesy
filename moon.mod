@@ -1,6 +1,6 @@
 name = "ChrisTu117/moongeodesy"
 
-version = "0.1.2"
+version = "0.2.0"
 
 readme = "README.md"
 
@@ -20,8 +20,12 @@ keywords = [
   "intersect",
   "localcartesian",
   "geographiclib",
+  "lambert",
+  "albers",
+  "wmm",
+  "magnetic-declination",
 ]
 
-description = "Pure MoonBit geodesy: Karney geodesics, rhumb lines, intersections, and LocalCartesian ENU (GeographicLib port), UTM/UPS/MGRS, and WGS-84/GCJ-02/BD-09 conversions"
+description = "Pure MoonBit geodesy: Karney geodesics, rhumb lines, intersections, LocalCartesian ENU (GeographicLib port), UTM/UPS/MGRS, Lambert and Albers conic grids, WMM2025 magnetic declination, and WGS-84/GCJ-02/BD-09 conversions"
 
 source = "src"

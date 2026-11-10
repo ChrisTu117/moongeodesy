@@ -2,3 +2,7 @@ import {
   "moonbitlang/core/math",
   "moonbitlang/core/debug",
 }
+
+import {
+  "ChrisTu117/moongeodesy/geodesic",
+} for "test"

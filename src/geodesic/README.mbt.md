@@ -29,7 +29,7 @@ pub fn Geodesic::ellipsoid_area(Self) -> Double
 
 `cgcs2000()` uses the same `a` and `f` as `grs80()` (`a = 6378137` m, `f = 1/298.257222101`). CGCS2000 and GRS80 differ in GM and rotation rate, not in this ellipsoid.
 
-The series assume `|f|` up to about 1/50. WGS-84, GRS80, and CGCS2000 are inside that range. For a larger `|f|`, use `GeodesicExact` below.
+The series assume `|f|` up to about 1/50 (GeographicLib's guidance for its series, not something this library tests). WGS-84, GRS80, and CGCS2000 are well inside that range. For a larger `|f|`, use `GeodesicExact` below.
 
 ```mbt check
 ///|
@@ -103,7 +103,7 @@ pub fn GeodesicLineExact::densify(Self, max_step : Double) -> Array[(Double, Dou
 
 `GeodesicLineExact` is the line on that ellipsoid. `position`, `densify`, and `set_distance` match `GeodesicLine`.
 
-This path is the one to use when `|f| > 0.02`. It was checked against GeographicLib 2.5 `GeodSolve -E` on oblate and prolate ellipsoids with `|f|` up to 0.5: max distance error 7.5 nm, max direct position error 6.4 nm. The area term uses a direct discrete sine transform. Its length is 12 at `|f| = 0.1` and 24 at `|f| = 0.5`. It grows toward 1024 only as `|f|` approaches 1.
+This path is the one to use when `|f| > 0.02`. It was checked against GeographicLib 2.5 `GeodSolve -E` (105 inverse and 6 direct cases) on oblate ellipsoids with `f` up to 0.5 and prolate ones down to `f = -0.2`: distance error below 8 nm (measured 7.5 nm) and direct position error below 1e-13° (about 11 nm; measured 6.3 nm), the bounds the tests assert. The area term uses a direct discrete sine transform. Its length is 12 at `|f| = 0.1` and 24 at `|f| = 0.5`; the largest are 1536 points (oblate, `f` close to 1) and 4096 (extremely prolate). A white-box test checks these lengths.
 
 ```mbt check
 ///|
@@ -295,7 +295,7 @@ Longitudes are reduced to [-180, 180]. Set `long_unroll=true` when the path cros
 
 Latitude ±90 is a valid pole. A latitude outside [-90, 90] is returned as NaN. No error is raised. If the rhumb line crosses a pole, `lon2` and `area12` are NaN.
 
-The series assume `|f|` up to about 1/150. WGS-84, GRS80, and CGCS2000 are inside that range.
+The series assume `|f|` up to about 1/150 (GeographicLib's guidance, not tested here). WGS-84, GRS80, and CGCS2000 are inside that range.
 
 ```mbt check
 ///|
@@ -400,6 +400,8 @@ pub fn LocalCartesian::reverse(Self, x : Double, y : Double, z : Double) -> Geod
 ```
 
 `h` and `h0` are ellipsoidal heights in metres. Local `x` is east, `y` is north, and `z` is up (normal to the ellipsoid). The origin is `(lat0, lon0, h0)`; `h0` defaults to 0. `Geocentric` is the ECEF conversion used internally; it is also useful on its own.
+
+Both are ports of GeographicLib's `Geocentric` and `LocalCartesian`. They are tested against references that do not use that code (`tools/gen_local_cartesian.py`): 50-digit values from the textbook ECEF and ENU formulas, with the reverse solved by iteration (660 ECEF points on WGS-84, a sphere, a prolate ellipsoid, and GRS80, both poles, heights from −5 km to 35 786 km; 120 ENU cases from six origins, two of them polar), and PROJ `+proj=cart` (495) and `+proj=topocentric` (90). Forward and reverse agree within 2e-8 m (measured 7.5e-9 m, one unit in the last place at 36 000 km).
 
 `new` raises `GeocentricError::InvalidEllipsoid` when `a` is not positive or `f >= 1`. Latitudes outside [-90°, 90°] yield NaN, as elsewhere in this package.
 

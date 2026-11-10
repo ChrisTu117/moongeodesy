@@ -29,4 +29,9 @@ fn main {
   let back = @cn.gcj02_to_wgs84(@cn.wgs84_to_gcj02(shop))
   let rt = g.inverse(shop.lat, shop.lon, back.lat, back.lon).s12
   println("round-trip residual: \{rt} m")
+  // The README quotes the ~764 m error; fail loudly if it changes.
+  let err = (wrong.s12 - right.s12).abs()
+  if err < 760.0 || err > 770.0 || rt > 1.0e-6 {
+    abort("unexpected result: error \{err} m, round trip \{rt} m")
+  }
 }
