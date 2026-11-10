@@ -132,3 +132,75 @@ test "round trip over the whole box" {
     }
   }
 }
+
+///|
+/// Coastal towns, airports, and islands abroad: the previous data simplified
+/// foreign coasts to about 5 km and dropped small islands, so these were
+/// offset (found by an audit before the November review).
+test "foreign coasts and islands are not offset" {
+  let places : Array[(String, Double, Double)] = [
+    ("Kota Kinabalu", 5.9804, 116.0735),
+    ("Penang George Town", 5.4141, 100.3288),
+    ("Malacca", 2.1896, 102.2501),
+    ("Sandakan", 5.8394, 118.1172),
+    ("Tawau", 4.2448, 117.8911),
+    ("Kochi", 9.9312, 76.2673),
+    ("Pattaya", 12.9236, 100.8825),
+    ("Iloilo", 10.7202, 122.5621),
+    ("Puerto Princesa", 9.7392, 118.7353),
+    ("Boracay", 11.9674, 121.9248),
+    ("Coron", 11.9986, 120.2043),
+    ("Tagbilaran", 9.6500, 123.8500),
+    ("Basco", 20.4487, 121.9702),
+    ("Ha Long", 20.9599, 107.0425),
+    ("Vung Tau", 10.3460, 107.0843),
+    ("Con Dao", 8.6826, 106.6090),
+    ("Ly Son", 15.3800, 109.1190),
+    ("Naha airport", 26.1958, 127.6459),
+    ("Ishigaki", 24.3448, 124.1572),
+    ("Yonaguni", 24.4672, 123.0045),
+    ("Ulleungdo", 37.4845, 130.9057),
+    ("Nampo", 38.7375, 125.4078),
+    ("Sittwe", 20.1460, 92.8983),
+    ("Kawthaung", 9.9822, 98.5503),
+    ("Myeik", 12.4396, 98.6003),
+    ("Koror", 7.3419, 134.4792),
+    ("Male", 4.1755, 73.5093),
+  ]
+  for p in places {
+    let (name, lat, lon) = p
+    assert_true(@cn.out_of_china(lat, lon), msg="\{name} should be foreign")
+    let w = @cn.LatLon::new(lat, lon)
+    assert_eq(@cn.wgs84_to_gcj02(w), w)
+    assert_eq(@cn.gcj02_to_wgs84(w), w)
+    assert_eq(@cn.gcj02_to_wgs84_approx(w), w)
+  }
+}
+
+///|
+/// Every GeoNames town of 5000+ people in the box (tools/gen_cn_towns.py):
+/// foreign towns are not offset, towns in China, Hong Kong, Macau, and
+/// Taiwan are. The three listed exceptions are on islets that Natural Earth
+/// 1:10m does not contain, 14-18 km from the nearest land it has.
+test "GeoNames towns: foreign ones are not offset, Chinese ones are" {
+  let nf = foreign_towns.length() / 2
+  let nc = china_towns.length() / 2
+  for i in 0..<nf {
+    let lat = foreign_towns[2 * i]
+    let lon = foreign_towns[2 * i + 1]
+    assert_true(@cn.out_of_china(lat, lon), msg="foreign town \{lat},\{lon}")
+  }
+  for i in 0..<nc {
+    let lat = china_towns[2 * i]
+    let lon = china_towns[2 * i + 1]
+    assert_false(@cn.out_of_china(lat, lon), msg="Chinese town \{lat},\{lon}")
+  }
+  for e in foreign_town_exceptions {
+    assert_false(@cn.out_of_china(e.2, e.3), msg="exception \{e.0}")
+  }
+  println(
+    "GeoNames towns: \{nf} foreign not offset, \{nc} Chinese offset, \{foreign_town_exceptions.length()} exceptions",
+  )
+  assert_true(nf > 12000 && nc > 3000)
+  assert_eq(foreign_town_exceptions.length(), 3)
+}

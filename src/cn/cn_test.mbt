@@ -21,7 +21,8 @@ test "wgs84_to_gcj02 matches coord-convert reference" {
     assert_true(close(g.lat, glat, 1.0e-11), msg="lat \{lat},\{lon}")
     assert_true(close(g.lon, glon, 1.0e-11), msg="lon \{lat},\{lon}")
   }
-  assert_true(compared >= 120, msg="compared \{compared}")
+  // README: 140 of the 200 points are in China; 60 are foreign and unchanged.
+  assert_eq(compared, 140)
 }
 
 ///|

@@ -1,49 +1,92 @@
-"""Generate src/cn/boundary_data.mbt: foreign land inside the GCJ-02 box.
+"""Generate src/cn/boundary_data.mbt: where GCJ-02 is NOT applied inside the box.
 
-GCJ-02 is applied inside the usual box (lon 72.004..137.8347, lat 0.8293..55.8271)
-except on the land of other countries. This script takes Natural Earth's
-1:10m admin-0 countries, China point of view (public domain), keeps every
-country except China, Hong Kong, Macau and Scarborough Shoal, clips each outer
-ring to the box, simplifies it, and writes the rings as MoonBit arrays.
+GCJ-02 is applied inside the usual box (lon 72.004..137.8347, lat
+0.8293..55.8271) except on foreign land and in the sea next to foreign
+coasts. This script builds that "foreign" region from Natural Earth (public
+domain, China point of view):
 
-Usage (stdlib only):
-    python3 tools/gen_china_boundary.py [path/to/ne_10m_admin_0_countries_chn.geojson]
-Without a path the file is downloaded from SRC_URL. Its SHA-256 is checked.
+1. Natural Earth 1:10m admin-0 countries, China point of view, v5.1.2: every
+   country except China, Hong Kong, Macau and Scarborough Shoal.
+2. Natural Earth 1:10m minor islands, v5.1.2: an islet is added when it is
+   closer to a foreign country than to China and within 0.5 degree of that
+   country (this adds islands such as Ly Son, Vietnam, that are too small for
+   the countries layer; disputed features of the China point of view are
+   already inside China's polygons and are never added).
+3. The union is grown by BUFFER degrees (about 9 km), so coastal towns,
+   harbours, and small islands are inside it even after simplification, and
+   then Chinese land is cut out exactly. Near China's land borders the
+   boundary is therefore China's border.
+4. The region is simplified (TOL degrees, about 1 km), clipped to 1-degree
+   cells, and written with a per-cell index: each cell is empty, full, or a
+   list of rings tested with the even-odd rule.
+
+A self-check runs before writing: coastal and island places abroad must be
+foreign; Chinese cities, including coastal and island ones, must not be.
+
+Needs: pip install shapely
+Usage:
+    python3 tools/gen_china_boundary.py [countries.geojson [minor_islands.geojson]]
+Without paths the files are downloaded from Natural Earth's GitHub mirror.
+Their SHA-256 is checked.
 """
 
 import hashlib
 import json
+import math
 import os
 import sys
 import urllib.request
 
-SRC_URL = (
-    "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/"
-    "v5.1.2/geojson/ne_10m_admin_0_countries_chn.geojson"
-)
-SRC_SHA256 = "a13bf5f310fde87bc0a5f994f8ce9bd706cc198d8ee37d221e61c2546b945372"
-INSIDE = {"CHN", "HKG", "MAC", "SCR"}  # treated as inside China (no exclusion)
+from shapely.geometry import Point, box, shape
+from shapely.ops import unary_union
+from shapely.strtree import STRtree
+
+BASE = "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/v5.1.2/geojson/"
+SOURCES = {
+    "countries": (
+        BASE + "ne_10m_admin_0_countries_chn.geojson",
+        "a13bf5f310fde87bc0a5f994f8ce9bd706cc198d8ee37d221e61c2546b945372",
+    ),
+    "minor": (
+        BASE + "ne_10m_minor_islands.geojson",
+        "8c933ca7a4760256bdc46408355706e39764b0fa01c160c28888b90b4faec29f",
+    ),
+}
+INSIDE = {"CHN", "HKG", "MAC", "SCR"}  # China, including Hong Kong and Macau
 W, S, E, N = 72.004, 0.8293, 137.8347, 55.8271
-TOL = 0.01  # Douglas-Peucker tolerance near China, degrees (about 1.1 km)
-TOL_FAR = 0.05  # tolerance more than about NEAR_CELLS cells from Chinese land
-CELL = 0.25  # grid cell (degrees) used to decide "near China"
-NEAR_CELLS = 2
-MIN_AREA = 0.002  # drop clipped rings smaller than this, square degrees
+BUFFER = 0.08  # degrees of sea added around foreign land (about 9 km)
+TOL = 0.01  # simplification tolerance, degrees (about 1.1 km)
+MINOR_REACH = 0.5  # an islet must be this close (degrees) to a foreign country
+CELL_LON0, CELL_LAT0, NCOLS, NROWS = 72, 0, 66, 56  # 1-degree cells
 OUT = os.path.join(os.path.dirname(__file__), "..", "src", "cn", "boundary_data.mbt")
 
-# Points well away (>= 10 km) from any land border, used as a self-check.
+# Self-check. Foreign: capitals, and coastal and island places that the
+# previous (simplified-coast) data got wrong. China: inland, coastal and
+# island cities, Hong Kong, Macau, Taiwan, and the South China Sea.
 FOREIGN = {
     "Seoul": (37.5665, 126.9780), "Busan": (35.1796, 129.0756),
-    "Pyongyang": (39.0392, 125.7625), "Osaka": (34.6937, 135.5023),
-    "Hanoi": (21.0285, 105.8542), "Ho Chi Minh City": (10.8231, 106.6297),
-    "Vientiane": (17.9757, 102.6331), "Bangkok": (13.7563, 100.5018),
+    "Pyongyang": (39.0392, 125.7625), "Nampo": (38.7375, 125.4078),
+    "Osaka": (34.6937, 135.5023), "Naha airport": (26.1958, 127.6459),
+    "Ishigaki": (24.3448, 124.1572), "Yonaguni": (24.4672, 123.0045),
+    "Ulleungdo": (37.4845, 130.9057), "Hanoi": (21.0285, 105.8542),
+    "Ha Long": (20.9599, 107.0425), "Vung Tau": (10.3460, 107.0843),
+    "Con Dao": (8.6826, 106.6090), "Ly Son": (15.3800, 109.1190),
+    "Ho Chi Minh City": (10.8231, 106.6297), "Vientiane": (17.9757, 102.6331),
+    "Bangkok": (13.7563, 100.5018), "Pattaya": (12.9236, 100.8825),
     "Phnom Penh": (11.5564, 104.9282), "Yangon": (16.8409, 96.1735),
-    "Kuala Lumpur": (3.1390, 101.6869), "Singapore": (1.3521, 103.8198),
-    "Manila": (14.5995, 120.9842), "Ulaanbaatar": (47.8864, 106.9057),
-    "Vladivostok": (43.1198, 131.8869), "Almaty": (43.2220, 76.8512),
-    "Bishkek": (42.8746, 74.5698), "Kathmandu": (27.7172, 85.3240),
-    "Thimphu": (27.4728, 89.6390), "Dhaka": (23.8103, 90.4125),
-    "New Delhi": (28.6139, 77.2090), "Islamabad": (33.6844, 73.0479),
+    "Sittwe": (20.1460, 92.8983), "Kawthaung": (9.9822, 98.5503),
+    "Kuala Lumpur": (3.1390, 101.6869), "Penang": (5.4141, 100.3288),
+    "Malacca": (2.1896, 102.2501), "Kota Kinabalu": (5.9804, 116.0735),
+    "Singapore": (1.3521, 103.8198), "Manila": (14.5995, 120.9842),
+    "Iloilo": (10.7202, 122.5621), "Puerto Princesa": (9.7392, 118.7353),
+    "Boracay": (11.9674, 121.9248), "Basco": (20.4487, 121.9702),
+    "Koror": (7.3419, 134.4792), "Kochi": (9.9312, 76.2673),
+    "Male": (4.1755, 73.5093), "Colombo": (6.9271, 79.8612),
+    "Ulaanbaatar": (47.8864, 106.9057), "Vladivostok": (43.1198, 131.8869),
+    "Almaty": (43.2220, 76.8512), "Bishkek": (42.8746, 74.5698),
+    "Kathmandu": (27.7172, 85.3240), "Thimphu": (27.4728, 89.6390),
+    "Dhaka": (23.8103, 90.4125), "New Delhi": (28.6139, 77.2090),
+    "Islamabad": (33.6844, 73.0479),
 }
 CHINA = {
     "Beijing": (39.9087, 116.3975), "Shanghai": (31.2304, 121.4737),
@@ -54,164 +97,112 @@ CHINA = {
     "Haikou": (20.0440, 110.1983), "Sanya": (18.2528, 109.5119),
     "Hong Kong": (22.3193, 114.1694), "Macau": (22.1987, 113.5439),
     "Taipei": (25.0330, 121.5654), "Kaohsiung": (22.6273, 120.3014),
-    "Yongxing Island": (16.8340, 112.3380),
+    "Yongxing Island": (16.8340, 112.3380), "Dalian": (38.9140, 121.6147),
+    "Qingdao": (36.0671, 120.3826), "Xiamen": (24.4798, 118.0894),
+    "Zhoushan": (29.9853, 122.2072), "Beihai": (21.4733, 109.1201),
+    "Weihai": (37.5131, 122.1204), "Hunchun": (42.8679, 130.3655),
 }
 
 
-def load(path):
+def load(name, path):
+    url, digest = SOURCES[name]
     if path is None:
-        with urllib.request.urlopen(SRC_URL) as r:
+        with urllib.request.urlopen(url) as r:
             data = r.read()
     else:
         with open(path, "rb") as fh:
             data = fh.read()
-    digest = hashlib.sha256(data).hexdigest()
-    if digest != SRC_SHA256:
-        sys.exit(f"SHA-256 mismatch: {digest}")
+    got = hashlib.sha256(data).hexdigest()
+    if got != digest:
+        sys.exit(f"{name}: SHA-256 mismatch: {got}")
     return json.loads(data)
 
 
-def clip(ring):
-    """Sutherland-Hodgman clip of a closed ring against the box."""
-    def edge(pts, inside, cross):
-        out = []
-        for i in range(len(pts)):
-            cur, prev = pts[i], pts[i - 1]
-            if inside(cur):
-                if not inside(prev):
-                    out.append(cross(prev, cur))
-                out.append(cur)
-            elif inside(prev):
-                out.append(cross(prev, cur))
-        return out
-
-    def at_x(x):
-        return lambda a, b: (x, a[1] + (b[1] - a[1]) * (x - a[0]) / (b[0] - a[0]))
-
-    def at_y(y):
-        return lambda a, b: (a[0] + (b[0] - a[0]) * (y - a[1]) / (b[1] - a[1]), y)
-
-    pts = [tuple(p[:2]) for p in ring[:-1]]
-    for inside, cross in (
-        (lambda p: p[0] >= W, at_x(W)),
-        (lambda p: p[0] <= E, at_x(E)),
-        (lambda p: p[1] >= S, at_y(S)),
-        (lambda p: p[1] <= N, at_y(N)),
-    ):
-        if not pts:
-            break
-        pts = edge(pts, inside, cross)
-    return pts
+def parts(geom):
+    return list(getattr(geom, "geoms", [geom]))
 
 
-def seg_dist(p, a, b):
-    dx, dy = b[0] - a[0], b[1] - a[1]
-    if dx == 0 and dy == 0:
-        return ((p[0] - a[0]) ** 2 + (p[1] - a[1]) ** 2) ** 0.5
-    t = max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / (dx * dx + dy * dy)))
-    return ((p[0] - a[0] - t * dx) ** 2 + (p[1] - a[1] - t * dy) ** 2) ** 0.5
+def build(countries, minor):
+    """The foreign region inside the box, before simplification."""
+    frame = box(W - 1.0, S - 1.0, E + 1.0, N + 1.0)
+    china = unary_union(
+        [shape(f["geometry"]) for f in countries["features"]
+         if f["properties"]["ADM0_A3"] in INSIDE]
+    ).intersection(frame)
+    foreign = unary_union(
+        [shape(f["geometry"]).intersection(frame) for f in countries["features"]
+         if f["properties"]["ADM0_A3"] not in INSIDE]
+    )
+    fparts = parts(foreign)
+    tree = STRtree(fparts)
+    islets = []
+    for f in minor["features"]:
+        m = shape(f["geometry"])
+        if not frame.intersects(m):
+            continue
+        df = fparts[tree.nearest(m)].distance(m)
+        if df < MINOR_REACH and df < china.distance(m):
+            islets.append(m)
+    region = unary_union([foreign] + islets).buffer(BUFFER, 8).difference(china)
+    return region.intersection(box(W, S, E, N)), china, len(islets)
 
 
-def simplify(pts, tol):
-    """Iterative Douglas-Peucker on an open polyline (keeps both ends).
-
-    `tol(a, b, c)` returns the tolerance for a segment from a to b whose
-    farthest point is c, so detail is kept only near Chinese land."""
-    keep = [False] * len(pts)
-    keep[0] = keep[-1] = True
-    stack = [(0, len(pts) - 1)]
-    while stack:
-        i, j = stack.pop()
-        best, k = 0.0, -1
-        for m in range(i + 1, j):
-            d = seg_dist(pts[m], pts[i], pts[j])
-            if d > best:
-                best, k = d, m
-        if k >= 0 and best > tol(pts[i], pts[j], pts[k]):
-            keep[k] = True
-            stack += [(i, k), (k, j)]
-    return [p for p, kp in zip(pts, keep) if kp]
+def rings_of(geom):
+    out = []
+    for p in parts(geom):
+        if p.is_empty or p.geom_type != "Polygon":
+            continue
+        out.append([(round(x, 4), round(y, 4)) for x, y in p.exterior.coords[:-1]])
+        for hole in p.interiors:
+            out.append([(round(x, 4), round(y, 4)) for x, y in hole.coords[:-1]])
+    return [r for r in out if len(r) >= 3]
 
 
-def simplify_ring(pts, tol):
-    # Split the ring at its two mutually far points so both halves are open.
-    far = max(range(len(pts)), key=lambda m: (pts[m][0] - pts[0][0]) ** 2 + (pts[m][1] - pts[0][1]) ** 2)
-    a = simplify(pts[: far + 1], tol)
-    b = simplify(pts[far:] + [pts[0]], tol)
-    return a[:-1] + b[:-1]
-
-
-def area(pts):
-    return abs(sum(pts[i - 1][0] * p[1] - p[0] * pts[i - 1][1] for i, p in enumerate(pts))) / 2.0
-
-
-def contains(pts, lon, lat):
+def even_odd(rings, lon, lat):
     inside = False
-    for i in range(len(pts)):
-        (x1, y1), (x2, y2) = pts[i - 1], pts[i]
-        if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
-            inside = not inside
+    for pts in rings:
+        for i in range(len(pts)):
+            (x1, y1), (x2, y2) = pts[i - 1], pts[i]
+            if (y1 > lat) != (y2 > lat) and lon < x1 + (lat - y1) * (x2 - x1) / (y2 - y1):
+                inside = not inside
     return inside
 
 
-def near_china_cells(features):
-    cells = set()
-    for f in features:
-        if f["properties"]["ADM0_A3"] not in INSIDE:
-            continue
-        geom = f["geometry"]
-        polys = geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
-        for poly in polys:
-            for lon, lat in (q[:2] for q in poly[0]):
-                cx, cy = int(lon // CELL), int(lat // CELL)
-                for dx in range(-NEAR_CELLS, NEAR_CELLS + 1):
-                    for dy in range(-NEAR_CELLS, NEAR_CELLS + 1):
-                        cells.add((cx + dx, cy + dy))
-    return cells
-
-
 def main():
-    g = load(sys.argv[1] if len(sys.argv) > 1 else None)
-    cells = near_china_cells(g["features"])
+    countries = load("countries", sys.argv[1] if len(sys.argv) > 1 else None)
+    minor = load("minor", sys.argv[2] if len(sys.argv) > 2 else None)
+    region, _, n_islets = build(countries, minor)
+    region = region.simplify(TOL, preserve_topology=True)
 
-    def near(p):
-        return (int(p[0] // CELL), int(p[1] // CELL)) in cells
-
-    def tol(a, b, c):
-        return TOL if near(a) or near(b) or near(c) else TOL_FAR
-
-    rings, holes, raw = [], 0, 0
-    for f in g["features"]:
-        code = f["properties"]["ADM0_A3"]
-        if code in INSIDE:
-            continue
-        geom = f["geometry"]
-        polys = geom["coordinates"] if geom["type"] == "MultiPolygon" else [geom["coordinates"]]
-        for poly in polys:
-            holes += len(poly) - 1
-            pts = clip(poly[0])
-            if len(pts) < 3:
-                continue
-            raw += len(pts)
-            pts = simplify_ring(pts, tol)
-            if len(pts) >= 3 and area(pts) >= MIN_AREA:
-                rings.append((code, pts))
+    kinds, cell_start, ring_start, xy = [], [0], [0], []
+    cells = {}
+    for j in range(NROWS):
+        for i in range(NCOLS):
+            cell = box(CELL_LON0 + i, CELL_LAT0 + j, CELL_LON0 + i + 1, CELL_LAT0 + j + 1)
+            piece = region.intersection(cell)
+            if piece.is_empty or piece.area == 0.0:
+                kinds.append(0)
+            elif abs(piece.area - cell.area) < 1e-12 and len(rings_of(piece)) == 1:
+                kinds.append(1)
+            else:
+                kinds.append(2)
+                rings = rings_of(piece)
+                cells[(i, j)] = rings
+                for pts in rings:
+                    for x, y in pts:
+                        xy += [x, y]
+                    ring_start.append(len(xy) // 2)
+            cell_start.append(len(ring_start) - 1)
 
     def foreign(lat, lon):
-        return any(contains(p, lon, lat) for _, p in rings)
+        i, j = math.floor(lon - CELL_LON0), math.floor(lat - CELL_LAT0)
+        k = kinds[j * NCOLS + i]
+        return k == 1 or (k == 2 and even_odd(cells[(i, j)], lon, lat))
 
     bad = [n for n, (la, lo) in FOREIGN.items() if not foreign(la, lo)]
     bad += [n for n, (la, lo) in CHINA.items() if foreign(la, lo)]
     if bad:
         sys.exit(f"self-check failed for: {bad}")
-
-    starts, xy, boxes = [0], [], []
-    for _, pts in rings:
-        for lon, lat in pts:
-            xy += [lon, lat]
-        starts.append(len(xy) // 2)
-        lons, lats = [p[0] for p in pts], [p[1] for p in pts]
-        boxes += [min(lons), min(lats), max(lons), max(lats)]
 
     def arr(vals, fmt):
         lines, line = [], "  "
@@ -224,43 +215,58 @@ def main():
         lines.append(line.rstrip())
         return "\n".join(lines)
 
-    def num(v):
-        return f"{v:.3f}"
-
-    countries = sorted({c for c, _ in rings})
+    nfull, npart = kinds.count(1), kinds.count(2)
     out = [
         "// Generated by tools/gen_china_boundary.py. Do not edit.",
-        "// Source: Natural Earth 1:10m admin-0 countries, China point of view",
-        "// (v5.1.2, public domain), https://www.naturalearthdata.com/",
-        f"// Outer rings of {len(countries)} countries clipped to the GCJ-02 box,",
-        f"// Douglas-Peucker {TOL} deg within ~{NEAR_CELLS * CELL} deg of Chinese land, {TOL_FAR} deg",
-        f"// elsewhere; rings under {MIN_AREA} sq deg dropped.",
-        f"// {len(rings)} rings, {len(xy) // 2} vertices; holes ignored: {holes}.",
-        f"// Countries: {' '.join(countries)}",
+        "// Source: Natural Earth 1:10m admin-0 countries, China point of view, and",
+        "// 1:10m minor islands (v5.1.2, public domain), https://www.naturalearthdata.com/",
+        f"// Foreign land and islets, grown by {BUFFER} deg of sea, minus Chinese land,",
+        f"// simplified to {TOL} deg; {n_islets} minor islands added.",
+        f"// 1-degree cells from ({CELL_LON0}E, {CELL_LAT0}N): {nfull} full, {npart} partial;",
+        f"// {len(ring_start) - 1} rings, {len(xy) // 2} vertices.",
         "",
         "///|",
-        "/// Start index (in vertices) of each ring in `foreign_xy`; one extra entry at",
-        "/// the end marks the total vertex count.",
-        "let foreign_ring_start : FixedArray[Int] = [",
-        arr(starts, str),
+        "/// Cell grid: first longitude, first latitude, columns, rows (1-degree cells).",
+        f"let cell_lon0 : Double = {CELL_LON0}.0",
+        "",
+        "///|",
+        f"let cell_lat0 : Double = {CELL_LAT0}.0",
+        "",
+        "///|",
+        f"let cell_cols : Int = {NCOLS}",
+        "",
+        "///|",
+        f"let cell_rows : Int = {NROWS}",
+        "",
+        "///|",
+        "/// Per cell, row by row: 0 = no foreign region, 1 = all foreign, 2 = test rings.",
+        "let cell_kind : FixedArray[Int] = [",
+        arr(kinds, str),
         "]",
         "",
         "///|",
-        "/// Per ring: min lon, min lat, max lon, max lat (degrees).",
-        "let foreign_ring_bbox : FixedArray[Double] = [",
-        arr(boxes, num),
+        "/// First ring of each cell in `ring_start`; one extra entry at the end.",
+        "let cell_ring_start : FixedArray[Int] = [",
+        arr(cell_start, str),
+        "]",
+        "",
+        "///|",
+        "/// First vertex of each ring in `foreign_xy`; one extra entry at the end.",
+        "let ring_start : FixedArray[Int] = [",
+        arr(ring_start, str),
         "]",
         "",
         "///|",
         "/// Ring vertices as lon, lat pairs (degrees).",
         "let foreign_xy : FixedArray[Double] = [",
-        arr(xy, num),
+        arr(xy, lambda v: f"{v:.4f}"),
         "]",
         "",
     ]
-    with open(OUT, "w", encoding="utf-8") as fh:
+    with open(OUT, "w") as fh:
         fh.write("\n".join(out))
-    print(f"rings={len(rings)} vertices={len(xy) // 2} (clipped {raw}) holes_ignored={holes}")
+    print(f"wrote {OUT}: {nfull} full cells, {npart} partial, {len(ring_start) - 1} rings, "
+          f"{len(xy) // 2} vertices, {n_islets} islets")
 
 
 if __name__ == "__main__":
