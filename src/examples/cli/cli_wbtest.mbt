@@ -133,7 +133,9 @@ test "help lists every command" {
     "intersect closest <latx> <lonx> <azix> <laty> <lony> <aziy>", "enu forward <lat0> <lon0> <lat> <lon> [h]",
     "enu reverse <lat0> <lon0> <x> <y> <z>", "coord wgs2gcj <lat> <lon>", "coord gcj2wgs <lat> <lon>",
     "coord gcj2bd <lat> <lon>", "coord bd2gcj <lat> <lon>", "coord wgs2bd <lat> <lon>",
-    "coord bd2wgs <lat> <lon>",
+    "coord bd2wgs <lat> <lon>", "mag <lat> <lon> <date> [h]", "lcc forward <stdlat1> <stdlat2> <lat0> <lon0> <lat> <lon>",
+    "lcc reverse <stdlat1> <stdlat2> <lat0> <lon0> <x> <y>", "albers forward <stdlat1> <stdlat2> <lat0> <lon0> <lat> <lon>",
+    "albers reverse <stdlat1> <stdlat2> <lat0> <lon0> <x> <y>",
   ]
   for line in lines {
     assert_true(text.contains(line), msg=line)
