@@ -48,6 +48,7 @@ jobs:
           moon run src/examples/s3_accuracy
           moon run src/examples/s4_polygon_area
           moon run src/examples/s5_compass
+          moon run src/examples/s6_conic_area
 
       - name: Run CLI example
         run: |
@@ -60,6 +61,8 @@ jobs:
           moon run src/examples/cli -- coord wgs2bd 39.9087 116.3975
           moon run src/examples/cli -- coord bd2wgs 39.91645 116.41012
           moon run src/examples/cli -- mag 39.9087 116.3975 2026-11-10
+          moon run src/examples/cli -- albers forward 25 47 0 105 39.9087 116.3975
+          moon run src/examples/cli -- lcc reverse 25 47 0 105 1000000 4000000
           if moon run src/examples/cli -- nope; then
             echo "unknown command should fail"
             exit 1
