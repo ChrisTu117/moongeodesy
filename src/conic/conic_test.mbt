@@ -586,3 +586,71 @@ test "Lambert: both poles round-trip; the far pole is at a huge distance" {
   assert_true(@math.hypot(far.x, far.y) > 1.0e20)
   assert_eq(lcc.reverse(105.0, far.x, far.y).lat, -90.0)
 }
+
+///|
+test "prolate ellipsoid: conformal and equal-area, measured with geodesics" {
+  // No reference implementation handles f < 0 here (PROJ does not), so
+  // check the defining properties with this library's geodesics, which are
+  // tested on prolate ellipsoids against GeodSolve.
+  let a = 6378137.0
+  let f = -0.01
+  let g = @geodesic.Geodesic::new(a, f)
+  let lcc = @conic.LambertConformalConic::new(a, f, 25.0, 47.0)
+  let aea = @conic.AlbersEqualArea::new(a, f, 25.0, 47.0)
+  for pt in [(20.0, 100.0), (36.0, 116.0), (50.0, 80.0)] {
+    let p = lcc.forward(105.0, pt.0, pt.1)
+    for d in [(1.0e-4, 0.0), (0.0, 1.0e-4), (1.0e-4, 1.0e-4)] {
+      let q = lcc.forward(105.0, pt.0 + d.0, pt.1 + d.1)
+      let grid = @math.hypot(q.x - p.x, q.y - p.y)
+      let ground = g.inverse(pt.0, pt.1, pt.0 + d.0, pt.1 + d.1).s12
+      let mid = lcc.forward(105.0, pt.0 + d.0 / 2.0, pt.1 + d.1 / 2.0)
+      assert_true((grid / ground - mid.k).abs() < 1.0e-9)
+    }
+    let back = lcc.reverse(105.0, p.x, p.y)
+    assert_true((back.lat - pt.0).abs() < 1.0e-12)
+    let r = aea.forward(105.0, pt.0, pt.1)
+    let rb = aea.reverse(105.0, r.x, r.y)
+    assert_true(
+      (rb.lat - pt.0).abs() < 1.0e-12 && (rb.lon - pt.1).abs() < 1.0e-12,
+    )
+  }
+  // Equal area: a 10° x 10° box, edges sampled every 0.01°.
+  let ring : Array[(Double, Double)] = []
+  for i in 0..<1000 {
+    ring.push((30.0, 100.0 + i.to_double() * 0.01))
+  }
+  for i in 0..<1000 {
+    ring.push((30.0 + i.to_double() * 0.01, 110.0))
+  }
+  for i in 0..<1000 {
+    ring.push((40.0, 110.0 - i.to_double() * 0.01))
+  }
+  for i in 0..<1000 {
+    ring.push((40.0 - i.to_double() * 0.01, 100.0))
+  }
+  let exact = g.polygon_area(ring).area.abs()
+  let mut s = 0.0
+  for i in 0..<ring.length() {
+    let p = aea.forward(105.0, ring[i].0, ring[i].1)
+    let q = aea.forward(
+      105.0,
+      ring[(i + 1) % ring.length()].0,
+      ring[(i + 1) % ring.length()].1,
+    )
+    s = s + (p.x * q.y - q.x * p.y)
+  }
+  assert_true(((s.abs() / 2.0 - exact) / exact).abs() < 1.0e-6)
+}
+
+///|
+test "latitudes beyond 90 degrees give NaN" {
+  let a = 6378137.0
+  let f = 1.0 / 298.257223563
+  let lcc = @conic.LambertConformalConic::new(a, f, 25.0, 47.0)
+  let aea = @conic.AlbersEqualArea::new(a, f, 25.0, 47.0)
+  for lat in [90.5, -91.0, @double.not_a_number] {
+    let p = lcc.forward(105.0, lat, 110.0)
+    let q = aea.forward(105.0, lat, 110.0)
+    assert_true(p.x.is_nan() && p.y.is_nan() && q.x.is_nan() && q.y.is_nan())
+  }
+}

@@ -335,7 +335,11 @@ pub fn taupf(tau : Double, es : Double) -> Double {
 pub fn tauf(taup : Double, es : Double) -> Double {
   let tol = dbl_epsilon.sqrt() / 10.0
   let taumax = 2.0 / dbl_epsilon.sqrt()
-  let e2m = 1.0 - es * es
+  // 1 - e^2 with the sign of e^2 (es = sign(f) sqrt|e^2|). GeographicLib
+  // uses 1 - es^2, which is wrong for prolate ellipsoids (e^2 < 0): Newton's
+  // method then converges only linearly and stops about 5e-8 degree short.
+  // For oblate ellipsoids the two are the same.
+  let e2m = 1.0 - es * es.abs()
   let mut tau = if taup.abs() > 70.0 {
     taup * @math.exp(eatanhe(1.0, es))
   } else {
