@@ -365,6 +365,35 @@ class Ellipsoid:
             "sig12": sig2 - sig1,
         }
 
+    def geod_nodes(self, lat1, lon1, azi1, ks):
+        """Equator crossings (nodes) of the geodesic from (lat1, lon1, azi1):
+        the points at auxiliary arc sigma = k pi for each k in ks. Returns a
+        list of (k, s, lon_unrolled) with s the signed distance from point 1."""
+        lat1, lon1, azi1 = D(lat1), D(lon1), D(azi1)
+        sa0, ca0, sig1, k2 = self._start(lat1, azi1)
+        out = []
+        for k in ks:
+            sig = k * PI
+            s = self._dist_int(k2, sig1, sig) if sig >= sig1 else -self._dist_int(k2, sig, sig1)
+            lam = self._omega(sa0, sig) - self._omega(sa0, sig1)
+            li = self._lam_int(k2, sig1, sig) if sig >= sig1 else -self._lam_int(k2, sig, sig1)
+            lam -= self.f * sa0 * li
+            out.append((k, s, lon1 + deg(lam)))
+        return out
+
+    def geod_s_at_lon(self, lat1, lon1, azi1, lon_target, s_guess):
+        """Distance along the geodesic at which the unrolled longitude reaches
+        lon_target (secant iteration on the direct problem)."""
+        lon_target = D(lon_target)
+
+        def F(s):
+            return self.geod_direct(lat1, lon1, azi1, s, area=False)["lon2_unrolled"] - lon_target
+
+        s = mp.findroot(F, (D(s_guess), D(s_guess) * (1 + mp.mpf(10) ** -6)), solver="secant",
+                        tol=mp.mpf(10) ** (-2 * mp.mp.dps + 20), maxsteps=100)
+        assert abs(F(s)) < mp.mpf(10) ** (-mp.mp.dps + 8)
+        return s
+
     def geod_inverse(self, lat1, lon1, lat2, lon2):
         """Inverse geodesic problem by quadrature: find the auxiliary-sphere
         longitude omega12 for which the longitude integral gives lon2 - lon1
