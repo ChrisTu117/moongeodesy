@@ -1,13 +1,13 @@
 # moongeodesy progress
 
-Updated: 2026-11-10 (Asia/Shanghai). Version 0.2.1 in `moon.mod`
+Updated: 2026-11-11 (Asia/Shanghai). Version 0.2.1 in `moon.mod`
 (0.2.0 is on mooncakes.io). Toolchain: moon 0.1.20261104; CI installs the
 current MoonBit CLI.
 
 ## Status
 
 - `moon test --target all`: every test passes on wasm, wasm-gc, js, and
-  native (136 per backend).
+  native (142 per backend).
 - `bash tools/acceptance.sh` runs every automated item of
   [`docs/十一月验收清单.md`](docs/十一月验收清单.md); all pass.
 - Accuracy and reference data: see the table in [README.md](README.md#accuracy-and-testing).
@@ -36,10 +36,20 @@ current MoonBit CLI.
   (GeoNames-tested boundary), Albers poles round-trip exactly, prolate
   inverse conformal latitude converges, third-party notices, remaining
   README and docs corrections; 0.2.1.
+- 2026-11-11: references that do not come from GeographicLib for the
+  GeographicLib ports: rhumb lines (textbook formulas), `GeodesicExact`
+  (quadrature, f from -0.5 to 0.5), polygon area (closed forms,
+  L'Huilier, Green's theorem), intersections (known answers); all in
+  `mpmath` at 45 digits.
 
 ## Ideas not done
 
-- Independent (non-GeographicLib) references for rhumb lines,
-  intersections, `GeodesicExact`, and polygon area, e.g. high-precision
-  quadrature in `mpmath`.
+- Independent references for the reduced length `m12` and the scales
+  `M12`, `M21` of `GeodesicExact` (still checked against `GeodSolve -E`
+  only), and for intersections in general position (the independent cases
+  have answers that follow from symmetry).
+- Rhumb lines within 0.1 deg of a pole keep about 3e-13 relative accuracy
+  in longitude (1.8 um after 20 000 km circling the pole), because the
+  conformal latitude is carried as an angle; a co-latitude form would
+  keep full relative accuracy there.
 - `Intersect::All` (every intersection within a radius).
