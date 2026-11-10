@@ -1,0 +1,89 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "ChrisTu117/moongeodesy/conic"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+#derive(@debug.Debug)
+pub suberror ConicError {
+  InvalidEllipsoid(Double, Double)
+  InvalidStandardLatitude(Double)
+  IncompatibleStandardLatitudes(Double, Double)
+  InvalidScale(Double)
+  InvalidOriginLatitude(Double)
+}
+pub fn ConicError::to_repr(Self) -> @debug.Repr
+
+// Types and methods
+pub struct AlbersEqualArea {
+  // private fields
+}
+pub fn AlbersEqualArea::central_scale(Self) -> Double
+pub fn AlbersEqualArea::equatorial_radius(Self) -> Double
+pub fn AlbersEqualArea::flattening(Self) -> Double
+pub fn AlbersEqualArea::forward(Self, Double, Double, Double) -> ConicProjected
+pub fn AlbersEqualArea::new(Double, Double, Double, Double, k1? : Double) -> Self raise ConicError
+pub fn AlbersEqualArea::new_1sp(Double, Double, Double, k0? : Double) -> Self raise ConicError
+pub fn AlbersEqualArea::origin_latitude(Self) -> Double
+pub fn AlbersEqualArea::reverse(Self, Double, Double, Double) -> ConicGeographic
+
+#derive(@debug.Debug)
+pub(all) struct ConicGeographic {
+  lat : Double
+  lon : Double
+  gamma : Double
+  k : Double
+}
+pub fn ConicGeographic::to_repr(Self) -> @debug.Repr
+
+pub struct ConicGrid {
+  lat_origin : Double
+  lon_origin : Double
+  false_easting : Double
+  false_northing : Double
+  // private fields
+}
+pub fn ConicGrid::albers(Double, Double, lat_origin~ : Double, lon_origin~ : Double, stdlat1~ : Double, stdlat2~ : Double, false_easting? : Double, false_northing? : Double) -> Self raise ConicError
+pub fn ConicGrid::forward(Self, Double, Double) -> GridPoint
+pub fn ConicGrid::lambert_1sp(Double, Double, lat_origin~ : Double, lon_origin~ : Double, k0? : Double, false_easting? : Double, false_northing? : Double) -> Self raise ConicError
+pub fn ConicGrid::lambert_2sp(Double, Double, lat_origin~ : Double, lon_origin~ : Double, stdlat1~ : Double, stdlat2~ : Double, false_easting? : Double, false_northing? : Double) -> Self raise ConicError
+pub fn ConicGrid::reverse(Self, Double, Double) -> ConicGeographic
+
+#derive(@debug.Debug)
+pub(all) struct ConicProjected {
+  x : Double
+  y : Double
+  gamma : Double
+  k : Double
+}
+pub fn ConicProjected::to_repr(Self) -> @debug.Repr
+
+#derive(@debug.Debug)
+pub(all) struct GridPoint {
+  easting : Double
+  northing : Double
+  gamma : Double
+  k : Double
+}
+pub fn GridPoint::to_repr(Self) -> @debug.Repr
+
+pub struct LambertConformalConic {
+  // private fields
+}
+pub fn LambertConformalConic::central_scale(Self) -> Double
+pub fn LambertConformalConic::cone_constant(Self) -> Double
+pub fn LambertConformalConic::equatorial_radius(Self) -> Double
+pub fn LambertConformalConic::flattening(Self) -> Double
+pub fn LambertConformalConic::forward(Self, Double, Double, Double) -> ConicProjected
+pub fn LambertConformalConic::new(Double, Double, Double, Double, k1? : Double) -> Self raise ConicError
+pub fn LambertConformalConic::new_1sp(Double, Double, Double, k0? : Double) -> Self raise ConicError
+pub fn LambertConformalConic::origin_latitude(Self) -> Double
+pub fn LambertConformalConic::reverse(Self, Double, Double, Double) -> ConicGeographic
+
+// Type aliases
+
+// Traits
