@@ -233,7 +233,7 @@ pub fn PolygonArea::test_edge(
 
 `PolygonResult` is `num` (vertex count), `perimeter` (m), and `area` (m²).
 
-`polygon_area` closes the ring. Counter-clockwise order gives a positive area. `sign=true` (the default) keeps that sign. `reverse=true` makes clockwise positive. `sign=false` folds the area into one hemisphere of the ellipsoid.
+`polygon_area` closes the ring. Counter-clockwise order gives a positive area. `sign=true` (the default) keeps that sign. `reverse=true` makes clockwise positive. `sign=false` returns the area in [0, A), where A is the area of the ellipsoid, so a clockwise ring gets the area of the rest of the ellipsoid instead of a negative value.
 
 `polygon(polyline=true)` sums length only. `area` is then NaN.
 

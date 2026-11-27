@@ -23,6 +23,16 @@ jobs:
       - name: Versions
         run: moon version --all
 
+      - name: Require moonc 1.0.0-rc1 or later
+        run: |
+          v=$(moonc -v)
+          echo "moonc: $v"
+          major=$(echo "$v" | sed -E 's/^v?([0-9]+)\..*/\1/')
+          if [ "$major" -lt 1 ]; then
+            echo "moonc $v is older than 1.0.0-rc1"
+            exit 1
+          fi
+
       - name: Update registry index
         run: moon update
 
@@ -43,8 +53,14 @@ jobs:
           moon info
           git diff --exit-code -- '*.mbti'
 
+      - name: Build (all backends)
+        run: moon build --target all
+
       - name: Test (all backends)
         run: moon test --target all
+
+      - name: Coverage (library lines, at least 90%)
+        run: moon coverage analyze -- -f summary | python3 tools/coverage.py 90
 
       - name: Library has no FFI
         run: |
