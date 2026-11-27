@@ -5,7 +5,9 @@ IntersectTool is the command-line front end of GeographicLib::Intersect
 GeographicLib build; this file was checked against version 2.5
 (https://github.com/geographiclib/geographiclib/tree/r2.5). The vectors
 are numeric results of that tool. They are not a copy of the Intersect
-source.
+source. Because intersect.mbt is ported from that code, these vectors check
+the port against its source; tools/gen_intersect_independent.py has cases
+with known answers computed in mpmath instead.
 
 Modes match IntersectTool: -c closest, -o closest with an offset, -n next,
 -i segment. Ellipsoids are WGS-84, a sphere, a prolate twin of WGS-84, and

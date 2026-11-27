@@ -28,5 +28,5 @@ extern "js" fn exit_with(code : Int32) -> Unit =
   #| }
 
 ///|
-#cfg(any(target="native", target="llvm"))
+#cfg(target="native")
 extern "c" fn exit_with(code : Int32) = "exit"

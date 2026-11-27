@@ -82,3 +82,91 @@ test "very short lines (accurate hypot) match geographiclib" {
   let r2 = g.inverse(-33.0, 151.0, -33.000000001, 151.000000002)
   assert_true((r2.s12 - 2.1733383453160246e-4).abs() < 1.0e-17)
 }
+
+///|
+test "polygon reverse and sign options on the octant (exact area A/8)" {
+  // Equator, meridian 0 and meridian 90 bound one eighth of the ellipsoid.
+  let g = @geodesic.Geodesic::wgs84()
+  let a = g.ellipsoid_area()
+  let ccw = g.polygon()
+  ccw.add_point(0.0, 0.0)
+  ccw.add_point(0.0, 90.0)
+  ccw.add_point(90.0, 0.0)
+  let tol = a * 1.0e-15
+  // Counter-clockwise: +A/8. reverse=true makes clockwise positive: -A/8.
+  assert_true((ccw.compute().area - a / 8.0).abs() < tol)
+  assert_true((ccw.compute(reverse=true).area - -a / 8.0).abs() < tol)
+  // sign=false returns the area in [0, A): the reversed ring encloses the
+  // rest of the ellipsoid, 7A/8.
+  assert_true(
+    (ccw.compute(reverse=true, sign=false).area - 7.0 * a / 8.0).abs() < tol,
+  )
+  assert_true((ccw.compute(sign=false).area - a / 8.0).abs() < tol)
+  // The same ring entered clockwise.
+  let cw = g.polygon()
+  cw.add_point(90.0, 0.0)
+  cw.add_point(0.0, 90.0)
+  cw.add_point(0.0, 0.0)
+  assert_true((cw.compute().area - -a / 8.0).abs() < tol)
+  assert_true((cw.compute(sign=false).area - 7.0 * a / 8.0).abs() < tol)
+  // test_point and test_edge do not change the polygon.
+  let t = ccw.test_point(45.0, 45.0)
+  assert_eq(t.num, 4)
+  assert_eq(ccw.compute().num, 3)
+  let e = ccw.test_edge(180.0, 1000.0)
+  assert_eq(e.num, 4)
+}
+
+///|
+test "test_point and test_edge on empty polygons and polylines" {
+  let g = @geodesic.Geodesic::wgs84()
+  let p = g.polygon()
+  let one = p.test_point(10.0, 20.0)
+  assert_eq(one.num, 1)
+  assert_eq(one.perimeter, 0.0)
+  assert_eq(one.area, 0.0)
+  // An edge needs a first point.
+  let none = p.test_edge(30.0, 1000.0)
+  assert_eq(none.num, 0)
+  assert_true(none.perimeter.is_nan() && none.area.is_nan())
+  // Polylines have no area.
+  let line = g.polygon(polyline=true)
+  line.add_point(0.0, 0.0)
+  line.add_point(0.0, 1.0)
+  let lp = line.test_point(1.0, 1.0)
+  assert_true(lp.area.is_nan())
+  let le = line.test_edge(0.0, 1000.0)
+  assert_true(le.area.is_nan() && le.perimeter > 0.0)
+}
+
+///|
+test "Geocentric reverse: centre, huge coordinates, and CGCS2000" {
+  let w = @geodesic.Geocentric::wgs84()
+  // Inside the evolute near the centre latitude is not unique; whatever
+  // reverse returns must map back to the same point.
+  for
+    p in [
+      (0.0, 0.0, 0.0),
+      (1000.0, 0.0, 0.0),
+      (20000.0, 5000.0, 30000.0),
+      (-3000.0, 2000.0, -40000.0),
+    ] {
+    let g = w.reverse(p.0, p.1, p.2)
+    let q = w.forward(g.lat, g.lon, g.h)
+    assert_true(
+      (q.x - p.0).abs() < 1.0e-6 &&
+      (q.y - p.1).abs() < 1.0e-6 &&
+      (q.z - p.2).abs() < 1.0e-6,
+      msg="\{p.0},\{p.1},\{p.2}",
+    )
+  }
+  // Very large coordinates are scaled to avoid overflow.
+  let far = w.reverse(1.0e300, 1.0e300, 0.0)
+  assert_true(far.lat.abs() < 1.0e-9 && (far.lon - 45.0).abs() < 1.0e-9)
+  assert_true(far.h > 1.0e300)
+  // CGCS2000 uses the GRS80 ellipsoid.
+  let c = @geodesic.Geocentric::cgcs2000()
+  let r = @geodesic.Geocentric::grs80()
+  assert_eq(c.equatorial_radius(), r.equatorial_radius())
+  assert_eq(c.flattening(), r.flattening())
+}

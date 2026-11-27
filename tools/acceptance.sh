@@ -107,6 +107,39 @@ cli_commands() {
     ! "${c[@]}" nope
 }
 
+moonc_version() {
+  local v major
+  v=$(moonc -v)
+  echo "moonc: $v"
+  major=$(echo "$v" | sed -E 's/^v?([0-9]+)\..*/\1/')
+  [ "$major" -ge 1 ]
+}
+
+readme_sections() {
+  local h
+  for h in "## Goals" "## Install" "## Usage" "## Reproduce"; do
+    grep -q "^$h" README.md || { echo "README has no '$h'"; return 1; }
+  done
+}
+
+ci_steps() {
+  local c
+  for c in "moon check --deny-warn" "moon build --target all" "moon test --target all"; do
+    grep -q "$c" .github/workflows/ci.yml || { echo "ci.yml does not run '$c'"; return 1; }
+  done
+}
+
+coverage() {
+  # moon coverage only reports from the default build directory.
+  moon coverage analyze -- -f summary | python3 tools/coverage.py 90
+}
+
+echo "== Official acceptance criteria (V, announced 2026-11-27)"
+run V1 "moonc 1.0.0-rc1 or later" moonc_version
+run V4 "README: goals, install, usage, reproduce" readme_sections
+run V5 "CI covers check, build, and test" ci_steps
+run V7 "library line coverage at least 90%" coverage
+
 echo "== Official acceptance rules (A)"
 run A1 "MoonBit is the main language" moonbit_share
 run A2 "public repository" public_repo
@@ -117,6 +150,7 @@ run A10 "AI work explained (Chinese notes, README section)" ai_docs
 
 echo "== Build and test (C, same as CI)"
 run C1 "moon check --deny-warn" moon check --deny-warn "${TD[@]}"
+run C1b "moon build --target all" moon build --target all "${TD[@]}"
 run C2 "moon fmt --check" moon fmt --check "${TD[@]}"
 run C3 "README code blocks are the tested ones" readme_sync
 run C4 "interface files up to date" mbti_ok
@@ -131,7 +165,7 @@ run C9 "moon package --list" moon package --list "${TD[@]}"
 rm -f "$LOG"
 echo
 if [ "$FAILS" = 0 ]; then
-  echo "All automated checks passed. Manual items: see docs/十一月验收清单.md (M1-M4)."
+  echo "All automated checks passed. Manual items: see docs/十一月验收清单.md (V8, M1-M4)."
 else
   echo "$FAILS check(s) failed."
   exit 1

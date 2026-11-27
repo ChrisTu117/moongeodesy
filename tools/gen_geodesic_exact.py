@@ -5,7 +5,10 @@ GeodSolve is the command-line front end of GeographicLib::GeodesicExact
 GeographicLib build; this file was checked against version 2.5
 (https://github.com/geographiclib/geographiclib/tree/r2.5). Pass -E so
 the elliptic-integral geodesic is used. The vectors are numeric results
-of that tool. They are not a copy of the GeodesicExact source.
+of that tool. They are not a copy of the GeodesicExact source. Because
+geodesic_exact.mbt is ported from that code, these vectors check the port
+against its source; tools/gen_exact_independent.py makes references by
+quadrature in mpmath instead.
 
 Columns written into the MoonBit table:
   a, f, kind (0 inverse, 1 direct), four inputs,

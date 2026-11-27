@@ -1,13 +1,15 @@
 # moongeodesy progress
 
-Updated: 2026-11-10 (Asia/Shanghai). Version 0.2.1 in `moon.mod`
-(0.2.0 is on mooncakes.io). Toolchain: moon 0.1.20261104; CI installs the
-current MoonBit CLI.
+Updated: 2026-11-27 (Asia/Shanghai). Version 0.2.2 in `moon.mod`
+(0.2.1 is on mooncakes.io). Toolchain: moon 0.1.20261126 / moonc
+v1.0.0-rc1; CI installs the current MoonBit CLI and fails if moonc is
+older than 1.0.
 
 ## Status
 
 - `moon test --target all`: every test passes on wasm, wasm-gc, js, and
-  native (136 per backend).
+  native (145 per backend), and cover at least 90% of the library lines
+  (91.7%, `tools/coverage.py`).
 - `bash tools/acceptance.sh` runs every automated item of
   [`docs/十一月验收清单.md`](docs/十一月验收清单.md); all pass.
 - Accuracy and reference data: see the table in [README.md](README.md#accuracy-and-testing).
@@ -36,10 +38,25 @@ current MoonBit CLI.
   (GeoNames-tested boundary), Albers poles round-trip exactly, prolate
   inverse conformal latitude converges, third-party notices, remaining
   README and docs corrections; 0.2.1.
+- 2026-11-27: the official acceptance criteria require moonc 1.0.0-rc1 or
+  later. The code passes the 1.0.0-rc1 compiler after one attribute change
+  in the CLI example; CI now requires moonc 1.x, builds all backends
+  explicitly, and fails below 90% library line coverage; README gained
+  Goals and Reproduce sections; 0.2.2.
+- 2026-11-11: references that do not come from GeographicLib for the
+  GeographicLib ports: rhumb lines (textbook formulas), `GeodesicExact`
+  (quadrature, f from -0.5 to 0.5), polygon area (closed forms,
+  L'Huilier, Green's theorem), intersections (known answers); all in
+  `mpmath` at 45 digits.
 
 ## Ideas not done
 
-- Independent (non-GeographicLib) references for rhumb lines,
-  intersections, `GeodesicExact`, and polygon area, e.g. high-precision
-  quadrature in `mpmath`.
+- Independent references for the reduced length `m12` and the scales
+  `M12`, `M21` of `GeodesicExact` (still checked against `GeodSolve -E`
+  only), and for intersections in general position (the independent cases
+  have answers that follow from symmetry).
+- Rhumb lines within 0.1 deg of a pole keep about 3e-13 relative accuracy
+  in longitude (1.8 um after 20 000 km circling the pole), because the
+  conformal latitude is carried as an angle; a co-latitude form would
+  keep full relative accuracy there.
 - `Intersect::All` (every intersection within a radius).

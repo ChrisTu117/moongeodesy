@@ -1,7 +1,10 @@
 """Rhumb-line reference values from GeographicLib's RhumbSolve (WGS-84).
 
-RhumbSolve is an independent implementation of the rhumb inverse, direct,
-and area problems (Charles Karney, GeographicLib, MIT/X11 License). It ships
+RhumbSolve is GeographicLib's C++ solution of the rhumb inverse, direct,
+and area problems (Charles Karney, GeographicLib, MIT/X11 License), the code
+src/geodesic/rhumb.mbt is ported from, so these vectors check the port
+against its source. tools/gen_rhumb_independent.py makes references from
+textbook formulas in mpmath instead. RhumbSolve ships
 in the Debian/Ubuntu package geographiclib-tools, and it can be built from
 https://github.com/geographiclib/geographiclib (this file was checked
 against version 2.5). The vectors cover poles, the antimeridian, and due

@@ -1,4 +1,7 @@
 """Polygon area reference values from Python geographiclib 2.1 (WGS-84).
+polygon.mbt is ported from geographiclib, so these check the port against
+its source; tools/gen_polygon_independent.py has references that do not
+come from geographiclib.
 Usage: python3 tools/gen_polygon.py > src/geodesic/polygon_data_test.mbt"""
 from geographiclib.geodesic import Geodesic
 g = Geodesic.WGS84

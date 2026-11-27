@@ -103,7 +103,7 @@ pub fn GeodesicLineExact::densify(Self, max_step : Double) -> Array[(Double, Dou
 
 `GeodesicLineExact` is the line on that ellipsoid. `position`, `densify`, and `set_distance` match `GeodesicLine`.
 
-This path is the one to use when `|f| > 0.02`. It was checked against GeographicLib 2.5 `GeodSolve -E` (105 inverse and 6 direct cases) on oblate ellipsoids with `f` up to 0.5 and prolate ones down to `f = -0.2`: distance error below 8 nm (measured 7.5 nm) and direct position error below 1e-13° (about 11 nm; measured 6.3 nm), the bounds the tests assert. The area term uses a direct discrete sine transform. Its length is 12 at `|f| = 0.1` and 24 at `|f| = 0.5`; the largest are 1536 points (oblate, `f` close to 1) and 4096 (extremely prolate). A white-box test checks these lengths.
+This path is the one to use when `|f| > 0.02`. It was checked against GeographicLib 2.5 `GeodSolve -E` (105 inverse and 6 direct cases) on oblate ellipsoids with `f` up to 0.5 and prolate ones down to `f = -0.2`: distance error below 8 nm (measured 7.5 nm) and direct position error below 1e-13° (about 11 nm; measured 6.3 nm), the bounds the tests assert. Because that tool is the code this path is ported from, it is also checked against numerical quadrature of the classical distance and longitude integrals in `mpmath` (`tools/gen_exact_independent.py`, 209 direct and 165 inverse cases, `f` from 0.5 down to -0.5): direct position below 25 nm (measured 20.5 nm on a 30 000 km line) and inverse distance below 20 nm (measured 15.6 nm). The area term uses a direct discrete sine transform. Its length is 12 at `|f| = 0.1` and 24 at `|f| = 0.5`; the largest are 1536 points (oblate, `f` close to 1) and 4096 (extremely prolate). A white-box test checks these lengths.
 
 ```mbt check
 ///|
@@ -233,7 +233,7 @@ pub fn PolygonArea::test_edge(
 
 `PolygonResult` is `num` (vertex count), `perimeter` (m), and `area` (m²).
 
-`polygon_area` closes the ring. Counter-clockwise order gives a positive area. `sign=true` (the default) keeps that sign. `reverse=true` makes clockwise positive. `sign=false` folds the area into one hemisphere of the ellipsoid.
+`polygon_area` closes the ring. Counter-clockwise order gives a positive area. `sign=true` (the default) keeps that sign. `reverse=true` makes clockwise positive. `sign=false` returns the area in [0, A), where A is the area of the ellipsoid, so a clockwise ring gets the area of the rest of the ellipsoid instead of a negative value.
 
 `polygon(polyline=true)` sums length only. `area` is then NaN.
 
